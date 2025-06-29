@@ -156,7 +156,6 @@ function App() {
         aria-valuemin="0"
         aria-valuemax="100"
       />
-
       <section
         ref={heroRef}
         className="hero-section"
@@ -212,7 +211,6 @@ function App() {
           </div>
         </div>
       </section>
-
       <section
         ref={featuresRef}
         className="features-section"
@@ -387,84 +385,126 @@ function App() {
 }
 
 const RestaurantCard = React.memo(
-  ({ restaurant, index, onReviewClick, loading }) => (
-    <article
-      className="restaurant-card hover-lift-modern"
-      data-scroll-reveal
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      <div className="card-header">
-        <div className="restaurant-number">{index + 1}</div>
-        <h3 className="restaurant-name">{restaurant.name}</h3>
-        <div className="restaurant-badges">
-          {restaurant.area && (
-            <span className="badge area-badge">
-              <span role="img" aria-label="위치">
-                📍
-              </span>
-              {restaurant.area}
-            </span>
-          )}
-          {restaurant.cuisine && (
-            <span className="badge cuisine-badge">{restaurant.cuisine}</span>
-          )}
-          <span className="badge distance-badge">
-            <span role="img" aria-label="걷기">
-              🚶
-            </span>
-            {restaurant.displayDistance || `${restaurant.distance}m`}
-          </span>
-        </div>
-      </div>
+  ({ restaurant, index, onReviewClick, loading }) => {
+    const getCuisineStyle = (cuisine) => {
+      if (cuisine?.includes('한식')) {
+        return 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg';
+      }
+      if (cuisine?.includes('중식')) {
+        return 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg';
+      }
+      if (cuisine?.includes('일식')) {
+        return 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg';
+      }
+      if (cuisine?.includes('피자')) {
+        return 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg';
+      }
+      if (cuisine?.includes('카페')) {
+        return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg';
+      }
+      if (cuisine?.includes('치킨')) {
+        return 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg';
+      }
+      if (cuisine?.includes('베이커리')) {
+        return 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg';
+      }
+      return 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg';
+    };
 
-      {restaurant.description && (
-        <p className="restaurant-description">{restaurant.description}</p>
-      )}
-
-      {(restaurant.rating || restaurant.priceRange) && (
-        <div className="restaurant-meta">
-          {restaurant.rating && (
-            <span>
-              <span role="img" aria-label="별점">
-                ⭐
-              </span>
-              {restaurant.rating}
-            </span>
-          )}
-          {restaurant.priceRange && (
-            <span>
-              <span role="img" aria-label="가격">
-                💰
-              </span>
-              {restaurant.priceRange}
-            </span>
-          )}
-        </div>
-      )}
-
-      <button
-        onClick={() => onReviewClick(restaurant)}
-        className="review-button interactive"
-        disabled={loading}
-        aria-label={`${restaurant.name} 상세 리뷰 보기`}
+    return (
+      <article
+        className="restaurant-card hover-lift-modern"
+        data-scroll-reveal
+        style={{ animationDelay: `${index * 100}ms` }}
       >
-        {loading ? (
-          <span className="button-loading">
-            <div className="mini-spinner" />
-            처리 중...
-          </span>
-        ) : (
-          <>
-            <span role="img" aria-label="리뷰">
-              📝
+        <div className="card-header">
+          <div className="restaurant-number">{index + 1}</div>
+          <h3 className="restaurant-name">{restaurant.name}</h3>
+          <div className="restaurant-badges">
+            {restaurant.area && (
+              <span className="badge area-badge">
+                <span role="img" aria-label="위치">
+                  📍
+                </span>
+                {restaurant.area}
+              </span>
+            )}
+            {restaurant.cuisine && (
+              <span
+                className={`px-3 py-1 rounded-full font-semibold text-sm transform hover:scale-105 transition-all duration-200 ${getCuisineStyle(
+                  restaurant.cuisine
+                )}`}
+              >
+                {restaurant.cuisine}
+              </span>
+            )}
+            <span className="badge distance-badge">
+              <span role="img" aria-label="걷기">
+                🚶
+              </span>
+              {restaurant.displayDistance || `${restaurant.distance}m`}
             </span>
-            AI 상세 리뷰 보기
-            <div className="button-hover-effect" />
-          </>
+          </div>
+        </div>
+
+        {restaurant.description && (
+          <div className="relative backdrop-blur-md bg-white/30 rounded-2xl p-4 border border-white/20 shadow-2xl hover:bg-white/40 transition-all duration-500 mb-6">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400/10 via-purple-400/5 to-pink-400/10 rounded-2xl"></div>
+            <div className="relative">
+              <div className="flex items-center space-x-2 mb-3">
+                <span className="text-xs font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase tracking-wider">
+                  Category
+                </span>
+              </div>
+              <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                {restaurant.description}
+              </p>
+            </div>
+          </div>
         )}
-      </button>
-    </article>
-  )
+
+        {(restaurant.rating || restaurant.priceRange) && (
+          <div className="restaurant-meta">
+            {restaurant.rating && (
+              <span>
+                <span role="img" aria-label="별점">
+                  ⭐
+                </span>
+                {restaurant.rating}
+              </span>
+            )}
+            {restaurant.priceRange && (
+              <span>
+                <span role="img" aria-label="가격">
+                  💰
+                </span>
+                {restaurant.priceRange}
+              </span>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={() => onReviewClick(restaurant)}
+          className="review-button interactive"
+          disabled={loading}
+          aria-label={`${restaurant.name} 상세 리뷰 보기`}
+        >
+          {loading ? (
+            <span className="button-loading">
+              <div className="mini-spinner" />
+              처리 중...
+            </span>
+          ) : (
+            <>
+              AI 상세 리뷰 보기
+              <div className="button-hover-effect" />
+            </>
+          )}
+        </button>
+      </article>
+    );
+  }
 );
 
 const throttle = (func, limit) => {
