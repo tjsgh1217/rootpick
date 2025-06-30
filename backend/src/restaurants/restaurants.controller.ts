@@ -2,9 +2,9 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { GeminiService } from '../gemini/gemini.service';
 
 interface LocationSearchDto {
-  lat: number;
-  lng: number;
-  address?: string;
+  address: string;
+  lat?: number;
+  lng?: number;
 }
 
 @Controller('restaurants')
@@ -14,43 +14,23 @@ export class RestaurantsController {
   @Post('search-nearby')
   async searchNearbyRestaurants(@Body() searchDto: LocationSearchDto) {
     try {
-      console.log('🎯 Controller에서 받은 정확한 좌표:');
-      console.log('   위도 (원본):', searchDto.lat);
-      console.log('   경도 (원본):', searchDto.lng);
+      console.log('🎯 Controller에서 받은 정보:');
       console.log('   주소:', searchDto.address);
+      console.log('   좌표:', searchDto.lat, searchDto.lng);
 
-      const latPrecision = (searchDto.lat.toString().split('.')[1] || '')
-        .length;
-      const lngPrecision = (searchDto.lng.toString().split('.')[1] || '')
-        .length;
-
-      console.log(
-        `   좌표 정밀도: 위도 ${latPrecision}자리, 경도 ${lngPrecision}자리`,
-      );
-
-      const restaurants = await this.geminiService.getRestaurantRecommendations(
+      const restaurants = await this.geminiService.getRestaurantsByAddress(
+        searchDto.address,
         searchDto.lat,
         searchDto.lng,
-        searchDto.address,
       );
 
       if (!restaurants || restaurants.length === 0) {
-        console.log('❌ 실제 음식점 데이터를 받지 못했습니다.');
+        console.log('❌ 해당 주소에서 음식점을 찾을 수 없습니다.');
         return [];
       }
 
-      const restaurantsWithDetails = restaurants.map((restaurant, index) => {
-        console.log(
-          `${restaurant.name}: 실제거리 ${restaurant.displayDistance}, 주소 ${restaurant.address}`,
-        );
-
-        return {
-          ...restaurant,
-        };
-      });
-
-      console.log('✅ 최종 실제 음식점 데이터:', restaurantsWithDetails);
-      return restaurantsWithDetails;
+      console.log(`✅ ${restaurants.length}개의 음식점 발견`);
+      return restaurants;
     } catch (error) {
       console.error('❌ 음식점 검색 실패:', error);
       throw new Error('음식점 검색에 실패했습니다.');
@@ -59,12 +39,20 @@ export class RestaurantsController {
 
   @Post('get-review')
   async getRestaurantReview(
-    @Body() reviewDto: { name: string; location: string },
+    @Body()
+    reviewDto: {
+      name: string;
+      location: string;
+      category?: string;
+      aiRecommendation?: string;
+    },
   ) {
     try {
       const review = await this.geminiService.getDetailedReview(
         reviewDto.name,
         reviewDto.location,
+        reviewDto.category,
+        reviewDto.aiRecommendation,
       );
       return { review };
     } catch (error) {
