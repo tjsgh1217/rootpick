@@ -167,7 +167,6 @@
 
 .stat-item {
   text-align: center;
-
   color: white;
 }
 
@@ -555,11 +554,57 @@
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .review-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.review-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+  background: var(--gradient-primary);
+}
+
+.review-button:disabled .button-hover-effect {
+  display: none;
+}
+.restaurant-address {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.address-text {
+  font-size: 0.75rem;
+  color: #4a5568;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .address-text {
+    font-size: 0.7rem;
+  }
+}
+
+.button-loading-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
 }
 
 .button-hover-effect {
@@ -584,29 +629,39 @@
 }
 
 .loading-container {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
   padding: 4rem 0;
 }
 
 .loading-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   max-width: 400px;
-  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .loading-spinner {
   width: 60px;
   height: 60px;
-  border: 4px solid var(--color-gray-200);
-  border-top: 4px solid var(--color-primary);
+  border: 6px solid var(--color-gray-200);
+  border-top: 6px solid var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .mini-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -615,6 +670,16 @@
   font-size: 0.875rem;
   color: #718096;
   margin-top: 1rem;
+  text-align: center;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
@@ -975,15 +1040,6 @@
   }
   90% {
     transform: translate3d(0, -4px, 0);
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
   }
 }
 

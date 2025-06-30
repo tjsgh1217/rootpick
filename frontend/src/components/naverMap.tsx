@@ -7,14 +7,23 @@ declare global {
 }
 
 interface Restaurant {
+  id: number;
   name: string;
+  address: string;
+  category: string;
+  telephone: string;
+  description: string;
+  aiRecommendation: string;
+  link: string;
+  cuisine: string;
+  rating: number | null;
+  area: string;
+  displayDistance: string;
   lat: number;
   lng: number;
-  distance: number;
-  cuisine?: string;
-  rating?: number;
+  representativeMenus: string[];
+  distance?: number;
   priceRange?: string;
-  displayDistance?: string;
 }
 
 interface NaverMapProps {
@@ -74,7 +83,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
         </style>
       `;
     } else {
-      const { name, index, distance, cuisine, rating } = data;
+      const { name, index, distance, cuisine } = data;
       const shortName = name.length > 6 ? name.substring(0, 6) + '...' : name;
 
       const cuisineStyles = {
@@ -175,7 +184,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
               gap: 4px;
             ">
               <span>🚶 ${distance}m</span>
-              ${rating ? `<span>⭐ ${rating}</span>` : ''}
+              
             </div>
           </div>
         </div>
@@ -184,75 +193,84 @@ const NaverMap: React.FC<NaverMapProps> = ({
   };
 
   const createModernInfoWindow = (restaurant: Restaurant) => {
-    return `
-    <div style="
-      width: 280px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      position: relative;
-    ">
-      <!-- X 버튼 -->
-      <button onclick="window.closeInfoWindow()" style="
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
-        border-radius: 50%;
-        color: white;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-      " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" 
-         onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
-        ×
-      </button>
+    const getDistanceDisplay = () => {
+      if (restaurant.distance !== undefined) {
+        return `🚶 ${restaurant.distance}m`;
+      } else if (restaurant.displayDistance) {
+        return `📍 ${restaurant.displayDistance}`;
+      } else {
+        return '📍 위치 정보';
+      }
+    };
 
-      <!-- 헤더 -->
+    return `
+  <div style="
+    width: 280px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    position: relative;
+  ">
+    <!-- X 버튼 -->
+    <button onclick="
+      try {
+        if (typeof window.closeInfoWindow === 'function') {
+          window.closeInfoWindow();
+        } else {
+          console.error('closeInfoWindow function not found');
+        }
+      } catch(e) {
+        console.error('Error closing InfoWindow:', e);
+      }
+    " style="
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" 
+       onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
+      ×
+    </button>
+    
+    <!-- 헤더 -->
+    <div style="
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    ">
+      <h3 style="
+        margin: 0 0 8px 0;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 1.3;
+        padding-right: 40px;
+      ">${restaurant.name}</h3>
       <div style="
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        padding: 16px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
       ">
-        <h3 style="
-          margin: 0 0 8px 0;
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          line-height: 1.3;
-          padding-right: 40px;
-        ">${restaurant.name}</h3>
-        <div style="
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        ">
-          ${
-            restaurant.cuisine
-              ? `
-            <span style="
-              background: rgba(255, 255, 255, 0.2);
-              color: white;
-              padding: 4px 8px;
-              border-radius: 12px;
-              font-size: 11px;
-              font-weight: 500;
-            ">${restaurant.cuisine}</span>
-          `
-              : ''
-          }
+        ${
+          restaurant.cuisine
+            ? `
           <span style="
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -260,78 +278,66 @@ const NaverMap: React.FC<NaverMapProps> = ({
             border-radius: 12px;
             font-size: 11px;
             font-weight: 500;
-          ">🚶 ${restaurant.displayDistance || restaurant.distance + 'm'}</span>
-        </div>
-      </div>
-      
-      <!-- 콘텐츠 -->
-      <div style="
-        background: white;
-        padding: 16px;
-      ">
-        ${
-          restaurant.rating || restaurant.priceRange
-            ? `
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-          ">
-            ${
-              restaurant.rating
-                ? `
-              <div style="
-                display: flex;
-                align-items: center;
-                gap: 4px;
-              ">
-                <span style="color: #ffa726; font-size: 14px;">⭐</span>
-                <span style="font-weight: 600; color: #333;">${restaurant.rating}</span>
-              </div>
-            `
-                : ''
-            }
-            ${
-              restaurant.priceRange
-                ? `
-              <div style="
-                background: #f5f5f5;
-                padding: 4px 8px;
-                border-radius: 8px;
-                font-size: 12px;
-                color: #666;
-                font-weight: 500;
-              ">💰 ${restaurant.priceRange}</div>
-            `
-                : ''
-            }
-          </div>
+          ">${restaurant.cuisine}</span>
         `
             : ''
         }
-        
-        <div style="
-          text-align: center;
-          padding: 8px 0;
-        ">
-          <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-          " onmouseover="this.style.transform='scale(1.05)'" 
-             onmouseout="this.style.transform='scale(1)'">
-            📝 상세 정보 보기
-          </div>
-        </div>
+        <span style="
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 500;
+        ">${getDistanceDisplay()}</span>
       </div>
     </div>
+    
+    <!-- 콘텐츠 -->
+    <div style="
+      background: white;
+      padding: 16px;
+    ">
+      ${
+        restaurant.priceRange
+          ? `
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        ">
+           
+          ${
+            restaurant.priceRange
+              ? `
+            <div style="
+              background: #f5f5f5;
+              padding: 4px 8px;
+              border-radius: 8px;
+              font-size: 12px;
+              color: #666;
+              font-weight: 500;
+            ">💰 ${restaurant.priceRange}</div>
+          `
+              : ''
+          }
+        </div>
+      `
+          : ''
+      }
+      
+      <!-- 음식점 정보 -->
+      <div style="
+        text-align: center;
+        padding: 8px 0;
+        color: #666;
+        font-size: 14px;
+      ">
+        ${restaurant.name}의 위치입니다
+      </div>
+    </div>
+  </div>
   `;
   };
 
@@ -358,29 +364,55 @@ const NaverMap: React.FC<NaverMapProps> = ({
 
   const handleMapClick = useCallback(
     (e: any) => {
-      const lat = e.coord.lat();
-      const lng = e.coord.lng();
+      const latlng = e.coord;
 
-      console.log('🎯 사용자가 클릭한 위치:', { lat, lng });
+      if (window.naver && window.naver.maps.Service) {
+        window.naver.maps.Service.reverseGeocode(
+          {
+            coords: latlng,
+            orders: [
+              window.naver.maps.Service.OrderType.ADDR,
+              window.naver.maps.Service.OrderType.ROAD_ADDR,
+            ].join(','),
+          },
+          (status: any, response: any) => {
+            if (status === window.naver.maps.Service.Status.OK) {
+              const result = response.v2;
+              const address = result.address;
+              const fullAddress = address.jibunAddress || address.roadAddress;
 
-      clearSelectedLocationMarker();
-      clearRestaurantMarkers();
-      closeCurrentInfoWindow();
+              console.log('🎯 Geocoder 기반 정확한 위치:', {
+                lat: latlng.lat(),
+                lng: latlng.lng(),
+                address: fullAddress,
+              });
 
-      const selectedMarker = new window.naver.maps.Marker({
-        position: new window.naver.maps.LatLng(lat, lng),
-        map: mapRef.current,
-        title: '검색 기준점',
-        icon: {
-          content: createModernMarkerContent('search'),
-          anchor: new window.naver.maps.Point(24, 24),
-        },
-      });
+              clearSelectedLocationMarker();
+              clearRestaurantMarkers();
+              closeCurrentInfoWindow();
 
-      selectedLocationMarkerRef.current = selectedMarker;
+              const selectedMarker = new window.naver.maps.Marker({
+                position: latlng,
+                map: mapRef.current,
+                title: '검색 기준점',
+                icon: {
+                  content: createModernMarkerContent('search'),
+                  anchor: new window.naver.maps.Point(24, 24),
+                },
+              });
 
-      if (onLocationSelect) {
-        onLocationSelect({ lat, lng });
+              selectedLocationMarkerRef.current = selectedMarker;
+
+              if (onLocationSelect) {
+                onLocationSelect({
+                  lat: latlng.lat(),
+                  lng: latlng.lng(),
+                  address: fullAddress,
+                });
+              }
+            }
+          }
+        );
       }
     },
     [
@@ -417,6 +449,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
         if (!mapElement.current || mapRef.current) return;
 
         (window as any).closeInfoWindow = () => {
+          console.log('🔴 closeInfoWindow 호출됨');
           closeCurrentInfoWindow();
         };
 
@@ -450,7 +483,9 @@ const NaverMap: React.FC<NaverMapProps> = ({
     initializeMap();
 
     return () => {
-      delete (window as any).closeInfoWindow;
+      if ((window as any).closeInfoWindow) {
+        delete (window as any).closeInfoWindow;
+      }
       clearRestaurantMarkers();
       clearSelectedLocationMarker();
       closeCurrentInfoWindow();

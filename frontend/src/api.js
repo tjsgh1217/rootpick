@@ -5,7 +5,7 @@ const API_BASE_URL =
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,56 +13,91 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    console.log('🌐 API 요청:', {
+      url: `${config.baseURL}${config.url}`,
+      method: config.method,
+      data: config.data,
+    });
     return config;
   },
   (error) => {
-    console.error('API 요청 에러:', error);
+    console.error('❌ API 요청 에러:', error);
     return Promise.reject(error);
   }
 );
 
 apiClient.interceptors.response.use(
   (response) => {
+    console.log('✅ API 응답 성공:', {
+      status: response.status,
+      url: response.config.url,
+      dataLength: Array.isArray(response.data) ? response.data.length : 'N/A',
+    });
     return response;
   },
   (error) => {
-    console.error('API 응답 에러:', error.response?.status, error.message);
+    console.error('❌ API 응답 에러:', {
+      status: error.response?.status,
+      message: error.message,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+    });
     return Promise.reject(error);
   }
 );
 
-export const searchNearbyRestaurants = async (locationData) => {
+export const searchAIRestaurants = async (data) => {
   try {
-    const response = await apiClient.post('/restaurants/search-nearby', {
-      lat: locationData.lat,
-      lng: locationData.lng,
-      address:
-        locationData.address ||
-        `위도 ${locationData.lat.toFixed(4)}, 경도 ${locationData.lng.toFixed(
-          4
-        )}`,
+    console.log('🤖 AI 검색 요청 시작:', data);
+
+    const response = await apiClient.post('/restaurants/search-nearby', data);
+
+    console.log('✅ AI 검색 응답:', {
+      status: response.status,
+      dataCount: Array.isArray(response.data) ? response.data.length : 'N/A',
     });
 
     return response.data;
   } catch (error) {
-    console.error('음식점 검색 실패:', error);
-    throw new Error(
-      error.response?.data?.message ||
-        '음식점 검색에 실패했습니다. 다시 시도해주세요.'
-    );
+    console.error('❌ searchAIRestaurants 에러:', {
+      message: error.message,
+      status: error.response?.status,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+    });
+
+    if (error.response?.status === 404) {
+      throw new Error(
+        'API 엔드포인트를 찾을 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.'
+      );
+    } else if (error.response?.status === 500) {
+      throw new Error('서버 내부 오류가 발생했습니다.');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
+    } else if (error.code === 'ERR_NETWORK') {
+      throw new Error('네트워크 연결을 확인해주세요.');
+    }
+
+    throw error;
   }
 };
 
 export const getRestaurantReview = async (reviewData) => {
   try {
+    console.log('📝 리뷰 생성 요청:', reviewData);
+
     const response = await apiClient.post('/restaurants/get-review', {
       name: reviewData.name,
       location: reviewData.location,
+      category: reviewData.category,
+      aiRecommendation: reviewData.aiRecommendation,
     });
+
+    console.log('✅ 리뷰 생성 응답:', response.data);
 
     return response.data.review;
   } catch (error) {
-    console.error('리뷰 조회 실패:', error);
+    console.error('❌ 리뷰 조회 실패:', error);
     throw new Error(
       error.response?.data?.message || '리뷰를 불러오는데 실패했습니다.'
     );
@@ -71,21 +106,45 @@ export const getRestaurantReview = async (reviewData) => {
 
 export const addToFavorites = async (restaurant) => {
   try {
+    console.log('⭐ 즐겨찾기 추가:', restaurant);
+
     const response = await apiClient.post('/restaurants/favorites', restaurant);
     return response.data;
   } catch (error) {
-    console.error('즐겨찾기 추가 실패:', error);
+    console.error('❌ 즐겨찾기 추가 실패:', error);
     throw new Error('즐겨찾기 추가에 실패했습니다.');
   }
 };
 
 export const getFavorites = async () => {
   try {
+    console.log('📋 즐겨찾기 조회');
+
     const response = await apiClient.get('/restaurants/favorites');
     return response.data;
   } catch (error) {
-    console.error('즐겨찾기 조회 실패:', error);
+    console.error('❌ 즐겨찾기 조회 실패:', error);
     throw new Error('즐겨찾기 목록을 불러오는데 실패했습니다.');
+  }
+};
+
+export const testBackendConnection = async () => {
+  try {
+    console.log('🔧 백엔드 연결 테스트 시작...');
+
+    const response = await apiClient.post('/restaurants/search-nearby', {
+      address: '테스트 주소',
+    });
+
+    console.log('✅ 백엔드 연결 성공:', response.status);
+    return { success: true, status: response.status };
+  } catch (error) {
+    console.error('❌ 백엔드 연결 실패:', error);
+    return {
+      success: false,
+      error: error.message,
+      status: error.response?.status,
+    };
   }
 };
 

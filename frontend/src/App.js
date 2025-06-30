@@ -1,12 +1,13 @@
 import NaverMap from './components/naverMap.tsx';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { searchNearbyRestaurants, getRestaurantReview } from './api';
+import { searchAIRestaurants, getRestaurantReview } from './api';
 import './App.css';
 
 function App() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingReviewId, setLoadingReviewId] = useState(null);
   const [error, setError] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -64,19 +65,16 @@ function App() {
     async (location) => {
       console.log('🎯 선택된 위치:', location);
 
-      if (
-        !location ||
-        typeof location.lat !== 'number' ||
-        typeof location.lng !== 'number'
-      ) {
-        console.error('❌ 잘못된 좌표 데이터:', location);
-        setError('잘못된 좌표 데이터입니다.');
+      if (!location || !location.address) {
+        console.error('❌ 주소 정보가 없습니다:', location);
+        setError('주소 정보가 필요합니다.');
         return;
       }
 
       setSelectedLocation(location);
       setLoading(true);
       setError(null);
+      setRestaurants([]);
 
       setTimeout(() => {
         scrollToResults();
@@ -84,12 +82,14 @@ function App() {
 
       try {
         const requestData = {
+          address: location.address,
           lat: location.lat,
           lng: location.lng,
-          address: `위도 ${location.lat}, 경도 ${location.lng}`,
         };
 
-        const aiRestaurants = await searchNearbyRestaurants(requestData);
+        console.log('🏠 주소 기반 검색 요청:', requestData);
+
+        const aiRestaurants = await searchAIRestaurants(requestData);
 
         if (!Array.isArray(aiRestaurants)) {
           throw new Error('API 응답이 배열 형태가 아닙니다.');
@@ -101,7 +101,7 @@ function App() {
           scrollToResults();
         }, 200);
       } catch (error) {
-        console.error('❌ 음식점 검색 실패:', error);
+        console.error('❌ 주소 기반 검색 실패:', error);
         setError(`검색 실패: ${error.message}`);
         setRestaurants([]);
       } finally {
@@ -116,7 +116,7 @@ function App() {
       if (!selectedLocation) return;
 
       try {
-        setLoading(true);
+        setLoadingReviewId(restaurant.id);
 
         const review = await getRestaurantReview({
           name: restaurant.name,
@@ -132,7 +132,7 @@ function App() {
         console.error('리뷰 생성 실패:', error);
         setError(`리뷰 생성 실패: ${error.message}`);
       } finally {
-        setLoading(false);
+        setLoadingReviewId(null);
       }
     },
     [selectedLocation]
@@ -173,12 +173,10 @@ function App() {
               </div>
             ))}
           </div>
-
           <div className="hero-content">
             <h1 className="hero-title">
               <span className="title-line-1 animate-fade-in-up">루트픽</span>
             </h1>
-
             <p
               className="hero-subtitle animate-fade-in-up"
               style={{ animationDelay: '0.6s' }}
@@ -315,18 +313,12 @@ function App() {
           )}
 
           {loading && (
-            <div className="loading-container" data-scroll-reveal>
+            <div className="loading-container">
               <div className="loading-animation">
                 <div className="loading-spinner" aria-label="로딩 중" />
-                <p>AI가 맛집을 분석하고 있습니다...</p>
+
                 {selectedLocation && (
-                  <p className="loading-location">
-                    <span role="img" aria-label="위치">
-                      📍
-                    </span>
-                    {selectedLocation.lat.toFixed(4)},{' '}
-                    {selectedLocation.lng.toFixed(4)}
-                  </p>
+                  <p className="loading-location">{selectedLocation.address}</p>
                 )}
               </div>
             </div>
@@ -355,7 +347,7 @@ function App() {
                   restaurant={restaurant}
                   index={index}
                   onReviewClick={handleRestaurantReview}
-                  loading={loading}
+                  loading={loadingReviewId === restaurant.id}
                 />
               ))}
             </div>
@@ -411,6 +403,10 @@ const RestaurantCard = React.memo(
       return 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg';
     };
 
+    const handleLinkClick = (url) => {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
     return (
       <article
         className="restaurant-card hover-lift-modern"
@@ -429,15 +425,19 @@ const RestaurantCard = React.memo(
                 {restaurant.area}
               </span>
             )}
+
             {restaurant.cuisine && (
-              <span
-                className={`px-3 py-1 rounded-full font-semibold text-sm transform hover:scale-105 transition-all duration-200 ${getCuisineStyle(
-                  restaurant.cuisine
-                )}`}
-              >
-                {restaurant.cuisine}
-              </span>
+              <>
+                <span
+                  className={`px-3 py-1 rounded-full font-semibold text-sm transform hover:scale-105 transition-all duration-200 ${getCuisineStyle(
+                    restaurant.cuisine
+                  )}`}
+                >
+                  {restaurant.cuisine}
+                </span>
+              </>
             )}
+
             <span className="badge distance-badge">
               <span role="img" aria-label="걷기">
                 🚶
@@ -445,7 +445,66 @@ const RestaurantCard = React.memo(
               {restaurant.displayDistance || `${restaurant.distance}m`}
             </span>
           </div>
+
+          {restaurant.address && (
+            <div className="restaurant-address">
+              <span className="address-text">{restaurant.address}</span>
+            </div>
+          )}
         </div>
+
+        {restaurant.link && (
+          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-blue-700"></span>
+                <span className="text-xs text-blue-600">
+                  {restaurant.link.includes('instagram')
+                    ? 'Instagram'
+                    : restaurant.link.includes('facebook')
+                    ? 'Facebook'
+                    : restaurant.link.includes('blog')
+                    ? 'Blog'
+                    : 'Website'}
+                </span>
+              </div>
+              <button
+                onClick={() => handleLinkClick(restaurant.link)}
+                className="inline-flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs px-3 py-1 rounded-full font-medium border border-blue-200 transition-colors"
+              >
+                <span>방문하기</span>
+                <span>🔗</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {restaurant.representativeMenus &&
+        restaurant.representativeMenus.length > 0 ? (
+          <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200 mb-4">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-sm font-semibold text-orange-700">
+                대표 메뉴
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {restaurant.representativeMenus.map((menu, index) => (
+                <span
+                  key={index}
+                  className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-full font-medium border border-orange-200 hover:bg-orange-200 transition-colors"
+                >
+                  {menu}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">메뉴 정보 없음</span>
+            </div>
+          </div>
+        )}
 
         {restaurant.description && (
           <div className="relative backdrop-blur-md bg-white/30 rounded-2xl p-4 border border-white/20 shadow-2xl hover:bg-white/40 transition-all duration-500 mb-6">
@@ -463,27 +522,6 @@ const RestaurantCard = React.memo(
           </div>
         )}
 
-        {(restaurant.rating || restaurant.priceRange) && (
-          <div className="restaurant-meta">
-            {restaurant.rating && (
-              <span>
-                <span role="img" aria-label="별점">
-                  ⭐
-                </span>
-                {restaurant.rating}
-              </span>
-            )}
-            {restaurant.priceRange && (
-              <span>
-                <span role="img" aria-label="가격">
-                  💰
-                </span>
-                {restaurant.priceRange}
-              </span>
-            )}
-          </div>
-        )}
-
         <button
           onClick={() => onReviewClick(restaurant)}
           className="review-button interactive"
@@ -491,10 +529,9 @@ const RestaurantCard = React.memo(
           aria-label={`${restaurant.name} 상세 리뷰 보기`}
         >
           {loading ? (
-            <span className="button-loading">
+            <div className="button-loading-center">
               <div className="mini-spinner" />
-              처리 중...
-            </span>
+            </div>
           ) : (
             <>
               AI 상세 리뷰 보기
