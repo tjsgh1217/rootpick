@@ -36,28 +36,4 @@ export class RestaurantsController {
       throw new Error('음식점 검색에 실패했습니다.');
     }
   }
-
-  @Post('get-review')
-  async getRestaurantReview(
-    @Body()
-    reviewDto: {
-      name: string;
-      location: string;
-      category?: string;
-      aiRecommendation?: string;
-    },
-  ) {
-    try {
-      const review = await this.geminiService.getDetailedReview(
-        reviewDto.name,
-        reviewDto.location,
-        reviewDto.category,
-        reviewDto.aiRecommendation,
-      );
-      return { review };
-    } catch (error) {
-      console.error('❌ 리뷰 생성 실패:', error);
-      throw new Error('리뷰 생성에 실패했습니다.');
-    }
-  }
 }
