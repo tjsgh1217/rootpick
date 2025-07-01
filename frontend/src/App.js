@@ -1,13 +1,14 @@
 import NaverMap from './components/naverMap.tsx';
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { searchAIRestaurants, getRestaurantReview } from './api';
+import { searchAIRestaurants } from './api';
 import './App.css';
 
 function App() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingReviewId, setLoadingReviewId] = useState(null);
+  const [loadingReviewId] = useState(null);
   const [error, setError] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -109,33 +110,6 @@ function App() {
       }
     },
     [scrollToResults]
-  );
-
-  const handleRestaurantReview = useCallback(
-    async (restaurant) => {
-      if (!selectedLocation) return;
-
-      try {
-        setLoadingReviewId(restaurant.id);
-
-        const review = await getRestaurantReview({
-          name: restaurant.name,
-          location: `${
-            restaurant.area || ''
-          } 위도 ${selectedLocation.lat.toFixed(
-            6
-          )}, 경도 ${selectedLocation.lng.toFixed(6)}`,
-        });
-
-        showReviewModal(restaurant.name, review);
-      } catch (error) {
-        console.error('리뷰 생성 실패:', error);
-        setError(`리뷰 생성 실패: ${error.message}`);
-      } finally {
-        setLoadingReviewId(null);
-      }
-    },
-    [selectedLocation]
   );
 
   const scrollToSection = useCallback((ref) => {
@@ -346,7 +320,6 @@ function App() {
                   key={`${restaurant.name}-${index}`}
                   restaurant={restaurant}
                   index={index}
-                  onReviewClick={handleRestaurantReview}
                   loading={loadingReviewId === restaurant.id}
                 />
               ))}
@@ -376,173 +349,220 @@ function App() {
   );
 }
 
-const RestaurantCard = React.memo(
-  ({ restaurant, index, onReviewClick, loading }) => {
-    const getCuisineStyle = (cuisine) => {
-      if (cuisine?.includes('한식')) {
-        return 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg';
-      }
-      if (cuisine?.includes('중식')) {
-        return 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg';
-      }
-      if (cuisine?.includes('일식')) {
-        return 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg';
-      }
-      if (cuisine?.includes('피자')) {
-        return 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg';
-      }
-      if (cuisine?.includes('카페')) {
-        return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg';
-      }
-      if (cuisine?.includes('치킨')) {
-        return 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg';
-      }
-      if (cuisine?.includes('베이커리')) {
-        return 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg';
-      }
-      return 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg';
-    };
+const RestaurantCard = React.memo(({ restaurant, index }) => {
+  const getCuisineStyle = (cuisine) => {
+    if (cuisine?.includes('한식')) {
+      return 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg';
+    }
+    if (cuisine?.includes('중식')) {
+      return 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg';
+    }
+    if (cuisine?.includes('일식')) {
+      return 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg';
+    }
+    if (cuisine?.includes('피자')) {
+      return 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg';
+    }
+    if (cuisine?.includes('카페')) {
+      return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg';
+    }
+    if (cuisine?.includes('치킨')) {
+      return 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg';
+    }
+    if (cuisine?.includes('베이커리')) {
+      return 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg';
+    }
+    return 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg';
+  };
 
-    const handleLinkClick = (url) => {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    };
+  const handleLinkClick = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
-    return (
-      <article
-        className="restaurant-card hover-lift-modern"
-        data-scroll-reveal
-        style={{ animationDelay: `${index * 100}ms` }}
-      >
-        <div className="card-header">
-          <div className="restaurant-number">{index + 1}</div>
-          <h3 className="restaurant-name">{restaurant.name}</h3>
-          <div className="restaurant-badges">
-            {restaurant.area && (
-              <span className="badge area-badge">
-                <span role="img" aria-label="위치">
-                  📍
-                </span>
-                {restaurant.area}
+  const handleCallClick = (phone) => {
+    window.location.href = `tel:${phone}`;
+  };
+
+  const openNaverMap = (lat, lng, name) => {
+    const url = `https://map.naver.com/v5/search/${encodeURIComponent(
+      name
+    )}/place/${lat},${lng}`;
+    window.open(url, '_blank');
+  };
+
+  return (
+    <article
+      className="restaurant-card hover-lift-modern"
+      data-scroll-reveal
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
+      <div className="card-header">
+        <div className="restaurant-number">{index + 1}</div>
+        <h3 className="restaurant-name">{restaurant.name}</h3>
+        <div className="restaurant-badges">
+          {restaurant.area && (
+            <span className="badge area-badge">
+              <span role="img" aria-label="위치">
+                📍
               </span>
-            )}
+              {restaurant.area}
+            </span>
+          )}
 
-            {restaurant.cuisine && (
-              <>
-                <span
-                  className={`px-3 py-1 rounded-full font-semibold text-sm transform hover:scale-105 transition-all duration-200 ${getCuisineStyle(
-                    restaurant.cuisine
-                  )}`}
-                >
-                  {restaurant.cuisine}
-                </span>
-              </>
-            )}
+          {restaurant.cuisine && (
+            <span
+              className={`px-3 py-1 rounded-full font-semibold text-sm transform hover:scale-105 transition-all duration-200 ${getCuisineStyle(
+                restaurant.cuisine
+              )}`}
+            >
+              {restaurant.cuisine}
+            </span>
+          )}
 
-            <span className="badge distance-badge">
-              <span role="img" aria-label="걷기">
-                🚶
+          <span className="badge distance-badge">
+            <span role="img" aria-label="걷기">
+              🚶
+            </span>
+            {restaurant.displayDistance || `${restaurant.distance}m`}
+          </span>
+        </div>
+
+        {restaurant.address && (
+          <div className="restaurant-address">
+            <span className="address-text ml-2">{restaurant.address}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-semibold text-green-700 ml-2">
+              전화번호
+            </span>
+          </div>
+          {restaurant.telephone ? (
+            <button
+              onClick={() => handleCallClick(restaurant.telephone)}
+              className="inline-flex items-center space-x-1 bg-green-100 hover:bg-green-200 text-green-800 text-xs px-3 py-1 rounded-full font-medium border border-green-200 transition-colors"
+            >
+              <span>📞 {restaurant.telephone}</span>
+            </button>
+          ) : (
+            <span className="inline-flex items-center space-x-1 bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium border border-gray-200">
+              <span>📞 알 수 없음</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {restaurant.link && (
+        <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-blue-600">
+                {restaurant.link.includes('instagram')
+                  ? '📷 Instagram'
+                  : restaurant.link.includes('facebook')
+                  ? '👥 Facebook'
+                  : restaurant.link.includes('blog')
+                  ? '📝 Blog'
+                  : '🔗 Website'}
               </span>
-              {restaurant.displayDistance || `${restaurant.distance}m`}
+            </div>
+            <button
+              onClick={() => handleLinkClick(restaurant.link)}
+              className="inline-flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs px-3 py-1 rounded-full font-medium border border-blue-200 transition-colors"
+            >
+              <span>방문하기</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200 mb-4">
+        <div className="flex items-center space-x-2 mb-2">
+          <span className="text-sm font-semibold text-orange-700 ml-2">
+            대표 메뉴
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {restaurant.representativeMenus &&
+          restaurant.representativeMenus.length > 0 ? (
+            restaurant.representativeMenus.map((menu, index) => (
+              <span
+                key={index}
+                className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-full font-medium border border-orange-200 hover:bg-orange-200 transition-colors"
+              >
+                {menu}
+              </span>
+            ))
+          ) : (
+            <span className="inline-block bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-medium border border-gray-200">
+              알 수 없음
+            </span>
+          )}
+        </div>
+      </div>
+
+      {restaurant.description && (
+        <div className="relative backdrop-blur-md bg-white/30 rounded-2xl p-4 border border-white/20 shadow hover:bg-white/40 transition-all duration-500 mb-6">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400/10 via-purple-400/5 to-pink-400/10 rounded-2xl"></div>
+          <div className="relative">
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="text-xs font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase tracking-wider">
+                정보
+              </span>
+            </div>
+            <p className="text-sm font-medium text-slate-700 leading-relaxed">
+              {restaurant.description}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={() =>
+            openNaverMap(restaurant.lat, restaurant.lng, restaurant.name)
+          }
+          className="group flex-1 relative inline-flex justify-center items-center bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50 hover:from-slate-100 hover:via-gray-100 hover:to-slate-100 active:from-slate-200 active:via-gray-200 active:to-slate-200 border border-slate-200/60 hover:border-slate-300/80 text-slate-600 hover:text-slate-800 font-medium text-sm px-4 py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-slate-200/50 focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:ring-offset-1 backdrop-blur-sm overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          <div className="relative z-10 flex items-center">
+            <svg
+              className="w-4 h-4 mr-2.5 text-slate-500 group-hover:text-slate-700 transition-colors duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+
+            <span className="relative z-10 tracking-wide">
+              네이버 지도에서 보기
             </span>
           </div>
 
-          {restaurant.address && (
-            <div className="restaurant-address">
-              <span className="address-text">{restaurant.address}</span>
-            </div>
-          )}
-        </div>
-
-        {restaurant.link && (
-          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-blue-700"></span>
-                <span className="text-xs text-blue-600">
-                  {restaurant.link.includes('instagram')
-                    ? 'Instagram'
-                    : restaurant.link.includes('facebook')
-                    ? 'Facebook'
-                    : restaurant.link.includes('blog')
-                    ? 'Blog'
-                    : 'Website'}
-                </span>
-              </div>
-              <button
-                onClick={() => handleLinkClick(restaurant.link)}
-                className="inline-flex items-center space-x-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs px-3 py-1 rounded-full font-medium border border-blue-200 transition-colors"
-              >
-                <span>방문하기</span>
-                <span>🔗</span>
-              </button>
-            </div>
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-300/50 to-transparent" />
           </div>
-        )}
-
-        {restaurant.representativeMenus &&
-        restaurant.representativeMenus.length > 0 ? (
-          <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200 mb-4">
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="text-sm font-semibold text-orange-700">
-                대표 메뉴
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {restaurant.representativeMenus.map((menu, index) => (
-                <span
-                  key={index}
-                  className="inline-block bg-orange-100 text-orange-800 text-xs px-3 py-1 rounded-full font-medium border border-orange-200 hover:bg-orange-200 transition-colors"
-                >
-                  {menu}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 mb-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">메뉴 정보 없음</span>
-            </div>
-          </div>
-        )}
-
-        {restaurant.description && (
-          <div className="relative backdrop-blur-md bg-white/30 rounded-2xl p-4 border border-white/20 shadow-2xl hover:bg-white/40 transition-all duration-500 mb-6">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-400/10 via-purple-400/5 to-pink-400/10 rounded-2xl"></div>
-            <div className="relative">
-              <div className="flex items-center space-x-2 mb-3">
-                <span className="text-xs font-semibold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 uppercase tracking-wider">
-                  Category
-                </span>
-              </div>
-              <p className="text-sm font-medium text-slate-700 leading-relaxed">
-                {restaurant.description}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <button
-          onClick={() => onReviewClick(restaurant)}
-          className="review-button interactive"
-          disabled={loading}
-          aria-label={`${restaurant.name} 상세 리뷰 보기`}
-        >
-          {loading ? (
-            <div className="button-loading-center">
-              <div className="mini-spinner" />
-            </div>
-          ) : (
-            <>
-              AI 상세 리뷰 보기
-              <div className="button-hover-effect" />
-            </>
-          )}
         </button>
-      </article>
-    );
-  }
-);
+      </div>
+    </article>
+  );
+});
 
 const throttle = (func, limit) => {
   let inThrottle;
@@ -555,34 +575,6 @@ const throttle = (func, limit) => {
       setTimeout(() => (inThrottle = false), limit);
     }
   };
-};
-
-const showReviewModal = (restaurantName, review) => {
-  const modal = document.createElement('div');
-  modal.className = 'review-modal';
-  modal.innerHTML = `
-    <div class="modal-backdrop" onclick="this.parentElement.remove()">
-      <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-          <h3>${restaurantName} 리뷰</h3>
-          <button class="modal-close" onclick="this.closest('.review-modal').remove()">×</button>
-        </div>
-        <div class="modal-body">
-          <p>${review}</p>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-primary" onclick="this.closest('.review-modal').remove()">
-            확인
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  requestAnimationFrame(() => {
-    modal.classList.add('modal-show');
-  });
 };
 
 export default App;

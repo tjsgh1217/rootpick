@@ -13,21 +13,20 @@ interface Restaurant {
   category: string;
   telephone: string;
   description: string;
-  aiRecommendation: string;
   link: string;
   cuisine: string;
-  rating: number | null;
   area: string;
-  displayDistance: string;
   lat: number;
   lng: number;
   representativeMenus: string[];
-  distance?: number;
-  priceRange?: string;
 }
 
 interface NaverMapProps {
-  onLocationSelect?: (location: { lat: number; lng: number }) => void;
+  onLocationSelect?: (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => void;
   restaurants?: Restaurant[];
 }
 
@@ -83,7 +82,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
         </style>
       `;
     } else {
-      const { name, index, distance, cuisine } = data;
+      const { name, index, cuisine } = data;
       const shortName = name.length > 6 ? name.substring(0, 6) + '...' : name;
 
       const cuisineStyles = {
@@ -114,7 +113,6 @@ const NaverMap: React.FC<NaverMapProps> = ({
         " onmouseover="this.style.transform='scale(1.1) translateY(-2px)'" 
            onmouseout="this.style.transform='scale(1) translateY(0)'">
           
-          <!-- 메인 마커 -->
           <div style="
             position: relative;
             width: 44px;
@@ -137,7 +135,6 @@ const NaverMap: React.FC<NaverMapProps> = ({
             ">${style.emoji}</div>
           </div>
           
-          <!-- 순서 번호 -->
           <div style="
             position: absolute;
             top: -8px;
@@ -156,7 +153,6 @@ const NaverMap: React.FC<NaverMapProps> = ({
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
           ">${index + 1}</div>
           
-          <!-- 정보 카드 -->
           <div style="
             margin-top: 8px;
             background: rgba(255, 255, 255, 0.95);
@@ -175,17 +171,6 @@ const NaverMap: React.FC<NaverMapProps> = ({
               margin-bottom: 2px;
               line-height: 1.2;
             ">${shortName}</div>
-            <div style="
-              font-size: 9px;
-              color: #666;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 4px;
-            ">
-              <span>🚶 ${distance}m</span>
-              
-            </div>
           </div>
         </div>
       `;
@@ -193,152 +178,123 @@ const NaverMap: React.FC<NaverMapProps> = ({
   };
 
   const createModernInfoWindow = (restaurant: Restaurant) => {
-    const getDistanceDisplay = () => {
-      if (restaurant.distance !== undefined) {
-        return `🚶 ${restaurant.distance}m`;
-      } else if (restaurant.displayDistance) {
-        return `📍 ${restaurant.displayDistance}`;
-      } else {
-        return '📍 위치 정보';
-      }
-    };
-
     return `
-  <div style="
-    width: 280px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    position: relative;
-  ">
-    <!-- X 버튼 -->
-    <button onclick="
-      try {
-        if (typeof window.closeInfoWindow === 'function') {
-          window.closeInfoWindow();
-        } else {
-          console.error('closeInfoWindow function not found');
-        }
-      } catch(e) {
-        console.error('Error closing InfoWindow:', e);
-      }
-    " style="
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 32px;
-      height: 32px;
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      border-radius: 50%;
-      color: white;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
-    " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" 
-       onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
-      ×
-    </button>
-    
-    <!-- 헤더 -->
-    <div style="
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    ">
-      <h3 style="
-        margin: 0 0 8px 0;
-        color: white;
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 1.3;
-        padding-right: 40px;
-      ">${restaurant.name}</h3>
       <div style="
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+        width: 280px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        position: relative;
       ">
-        ${
-          restaurant.cuisine
-            ? `
-          <span style="
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
-          ">${restaurant.cuisine}</span>
-        `
-            : ''
-        }
-        <span style="
+        <button onclick="
+          try {
+            if (typeof window.closeInfoWindow === 'function') {
+              window.closeInfoWindow();
+            } else {
+              console.error('closeInfoWindow function not found');
+            }
+          } catch(e) {
+            console.error('Error closing InfoWindow:', e);
+          }
+        " style="
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 32px;
+          height: 32px;
           background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 50%;
           color: white;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 11px;
-          font-weight: 500;
-        ">${getDistanceDisplay()}</span>
-      </div>
-    </div>
-    
-    <!-- 콘텐츠 -->
-    <div style="
-      background: white;
-      padding: 16px;
-    ">
-      ${
-        restaurant.priceRange
-          ? `
-        <div style="
+          font-size: 18px;
+          font-weight: bold;
+          cursor: pointer;
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
+          justify-content: center;
+          z-index: 10;
+          transition: all 0.2s ease;
+          backdrop-filter: blur(10px);
+        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" 
+           onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
+          ×
+        </button>
+        
+        <div style="
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          padding: 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         ">
-           
+          <h3 style="
+            margin: 0 0 8px 0;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1.3;
+            padding-right: 40px;
+          ">${restaurant.name}</h3>
+          <div style="
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+          ">
+            ${
+              restaurant.cuisine
+                ? `
+              <span style="
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 500;
+              ">${restaurant.cuisine}</span>
+            `
+                : ''
+            }
+          </div>
+        </div>
+        
+        <div style="
+          background: white;
+          padding: 16px;
+        ">
           ${
             restaurant.priceRange
               ? `
             <div style="
-              background: #f5f5f5;
-              padding: 4px 8px;
-              border-radius: 8px;
-              font-size: 12px;
-              color: #666;
-              font-weight: 500;
-            ">💰 ${restaurant.priceRange}</div>
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            ">
+              <div style="
+                background: #f5f5f5;
+                padding: 4px 8px;
+                border-radius: 8px;
+                font-size: 12px;
+                color: #666;
+                font-weight: 500;
+              ">💰 ${restaurant.priceRange}</div>
+            </div>
           `
               : ''
           }
+          
+          <div style="
+            text-align: center;
+            padding: 8px 0;
+            color: #666;
+            font-size: 14px;
+          ">
+            ${restaurant.name}의 위치입니다
+          </div>
         </div>
-      `
-          : ''
-      }
-      
-      <!-- 음식점 정보 -->
-      <div style="
-        text-align: center;
-        padding: 8px 0;
-        color: #666;
-        font-size: 14px;
-      ">
-        ${restaurant.name}의 위치입니다
       </div>
-    </div>
-  </div>
-  `;
+    `;
   };
 
   const clearRestaurantMarkers = useCallback(() => {
@@ -520,7 +476,6 @@ const NaverMap: React.FC<NaverMapProps> = ({
           content: createModernMarkerContent('restaurant', {
             name: restaurant.name,
             index,
-            distance: restaurant.distance,
             cuisine: restaurant.cuisine,
             rating: restaurant.rating,
           }),

@@ -82,52 +82,6 @@ export const searchAIRestaurants = async (data) => {
   }
 };
 
-export const getRestaurantReview = async (reviewData) => {
-  try {
-    console.log('📝 리뷰 생성 요청:', reviewData);
-
-    const response = await apiClient.post('/restaurants/get-review', {
-      name: reviewData.name,
-      location: reviewData.location,
-      category: reviewData.category,
-      aiRecommendation: reviewData.aiRecommendation,
-    });
-
-    console.log('✅ 리뷰 생성 응답:', response.data);
-
-    return response.data.review;
-  } catch (error) {
-    console.error('❌ 리뷰 조회 실패:', error);
-    throw new Error(
-      error.response?.data?.message || '리뷰를 불러오는데 실패했습니다.'
-    );
-  }
-};
-
-export const addToFavorites = async (restaurant) => {
-  try {
-    console.log('⭐ 즐겨찾기 추가:', restaurant);
-
-    const response = await apiClient.post('/restaurants/favorites', restaurant);
-    return response.data;
-  } catch (error) {
-    console.error('❌ 즐겨찾기 추가 실패:', error);
-    throw new Error('즐겨찾기 추가에 실패했습니다.');
-  }
-};
-
-export const getFavorites = async () => {
-  try {
-    console.log('📋 즐겨찾기 조회');
-
-    const response = await apiClient.get('/restaurants/favorites');
-    return response.data;
-  } catch (error) {
-    console.error('❌ 즐겨찾기 조회 실패:', error);
-    throw new Error('즐겨찾기 목록을 불러오는데 실패했습니다.');
-  }
-};
-
 export const testBackendConnection = async () => {
   try {
     console.log('🔧 백엔드 연결 테스트 시작...');
