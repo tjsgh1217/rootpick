@@ -1,5 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { GeminiService } from '../gemini/gemini.service';
+import { RestaurantService } from '../services/restaurant.service';
+import { GeminiAiService } from '../services/gemini-ai.service';
 
 interface LocationSearchDto {
   address: string;
@@ -7,9 +8,16 @@ interface LocationSearchDto {
   lng?: number;
 }
 
+interface PlaceSearchDto {
+  query: string;
+}
+
 @Controller('restaurants')
 export class RestaurantsController {
-  constructor(private readonly geminiService: GeminiService) {}
+  constructor(
+    private readonly restaurantService: RestaurantService,
+    private readonly geminiAiService: GeminiAiService,
+  ) {}
 
   @Post('search-nearby')
   async searchNearbyRestaurants(@Body() searchDto: LocationSearchDto) {
@@ -18,7 +26,7 @@ export class RestaurantsController {
       console.log('   주소:', searchDto.address);
       console.log('   좌표:', searchDto.lat, searchDto.lng);
 
-      const restaurants = await this.geminiService.getRestaurantsByAddress(
+      const restaurants = await this.restaurantService.getRestaurantsByAddress(
         searchDto.address,
         searchDto.lat,
         searchDto.lng,
@@ -34,6 +42,38 @@ export class RestaurantsController {
     } catch (error) {
       console.error('❌ 음식점 검색 실패:', error);
       throw new Error('음식점 검색에 실패했습니다.');
+    }
+  }
+
+  @Post('search-places')
+  async searchPlaces(@Body() searchDto: PlaceSearchDto) {
+    try {
+      console.log('🔍 장소 검색 요청:', searchDto.query);
+      const places = await this.restaurantService.searchPlaces(searchDto.query);
+      return { items: places };
+    } catch (error) {
+      console.error('❌ 장소 검색 실패:', error);
+      return { items: [] };
+    }
+  }
+
+  @Post('compare')
+  async compareRestaurants(@Body() body: { restaurants: any[] }) {
+    try {
+      if (
+        !body.restaurants ||
+        !Array.isArray(body.restaurants) ||
+        body.restaurants.length < 2
+      ) {
+        throw new Error('비교할 음식점 리스트가 2개 이상 필요합니다.');
+      }
+      const result = await this.geminiAiService.compareRestaurants(
+        body.restaurants,
+      );
+      return { result };
+    } catch (error) {
+      console.error('❌ 음식점 비교 API 실패:', error);
+      return { result: 'AI 비교 결과를 생성하지 못했습니다.' };
     }
   }
 }
