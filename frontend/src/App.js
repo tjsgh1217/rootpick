@@ -3,6 +3,8 @@ import NaverMap from './components/naverMap.tsx';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { searchAIRestaurants } from './api';
 import './App.css';
+import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 
 function App() {
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -11,6 +13,10 @@ function App() {
   const [loadingReviewId] = useState(null);
   const [error, setError] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareResult, setCompareResult] = useState('');
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState('');
 
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
@@ -113,11 +119,35 @@ function App() {
   );
 
   const scrollToSection = useCallback((ref) => {
-    ref.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
+    if (ref.current) {
+      ref.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      setTimeout(() => {
+        window.scrollBy({ top: -30, left: 0, behavior: 'smooth' });
+      }, 400);
+    }
   }, []);
+
+  const handleCompare = async () => {
+    try {
+      setCompareLoading(true);
+      setCompareError('');
+      setCompareResult('');
+      setCompareModalOpen(true);
+
+      const res = await axios.post('/restaurants/compare', {
+        restaurants: restaurants,
+      });
+
+      setCompareResult(res.data.result);
+    } catch (e) {
+      setCompareError('AI 비교 결과를 가져오지 못했습니다.');
+    } finally {
+      setCompareLoading(false);
+    }
+  };
 
   return (
     <div className="scroll-landing-page">
@@ -132,54 +162,134 @@ function App() {
       />
       <section
         ref={heroRef}
-        className="hero-section"
+        className="relative min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-300 overflow-hidden"
         aria-label="메인 히어로 섹션"
       >
-        <div className="hero-background">
-          <div className="floating-elements" aria-hidden="true">
-            {['🍜', '🍕', '🍗', '🍣', '☕', '🥘'].map((emoji, index) => (
-              <div
-                key={emoji}
-                className={`float-element float-${index + 1}`}
-                style={{ animationDelay: `${index * -3}s` }}
-              >
-                {emoji}
-              </div>
-            ))}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-white/5"></div>
+
+          <div className="absolute inset-0 pointer-events-none">
+            {['🍜', '🍕', '🍗', '🍣', '☕', '🥘', '🍰', '🍺'].map(
+              (emoji, i) => (
+                <span
+                  key={emoji}
+                  className={`
+                  absolute text-3xl md:text-4xl opacity-20 animate-[float_20s_linear_infinite]
+                  ${i === 0 && 'top-16 left-16'}
+                  ${i === 1 && 'top-1/3 right-20'}
+                  ${i === 2 && 'bottom-1/4 left-1/4'}
+                  ${i === 3 && 'top-2/3 right-1/3'}
+                  ${i === 4 && 'bottom-1/3 right-16'}
+                  ${i === 5 && 'top-1/2 left-8'}
+                  ${i === 6 && 'bottom-1/2 right-8'}
+                  ${i === 7 && 'top-1/4 left-1/3'}
+                `}
+                  style={{ animationDelay: `${i * -2.5}s` }}
+                  aria-hidden="true"
+                >
+                  {emoji}
+                </span>
+              )
+            )}
           </div>
-          <div className="hero-content">
-            <h1 className="hero-title">
-              <span className="title-line-1 animate-fade-in-up">루트픽</span>
-            </h1>
-            <p
-              className="hero-subtitle animate-fade-in-up"
+
+          <div className="absolute top-20 left-10 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
+          <div className="absolute bottom-20 right-10 w-40 h-40 bg-pink-300/10 rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400/5 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-6 py-12">
+          <div className="flex-1 max-w-2xl text-center lg:text-left lg:pr-12 mb-12 lg:mb-0">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm font-medium animate-fade-in-up">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Naver API + Gemini AI 기반
+              </div>
+
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
+                <span className="block">루트픽</span>
+                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-2">
+                  RootPick
+                </span>
+              </h1>
+
+              <p
+                className="text-xl md:text-2xl font-medium text-white/90 leading-relaxed animate-fade-in-up"
+                style={{ animationDelay: '0.3s' }}
+              >
+                정확한{' '}
+                <span className="text-yellow-300 font-semibold">
+                  좌표 기반 거리 계산
+                </span>
+                과<br />
+                <span className="text-blue-300 font-semibold">
+                  AI 맛집 추천
+                </span>
+                으로
+                <br />
+                진짜 맛집을 찾아드려요
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1 max-w-md lg:max-w-lg">
+            <div
+              className="grid grid-cols-2 gap-6 animate-fade-in-up"
               style={{ animationDelay: '0.6s' }}
             >
-              지도 한 번 클릭으로 숨겨진 맛집을 발견하세요
-            </p>
-
-            <div
-              className="hero-cta animate-fade-in-up"
-              style={{ animationDelay: '0.9s' }}
-            ></div>
-
-            <div
-              className="hero-stats animate-fade-in-up"
-              style={{ animationDelay: '1.2s', transform: 'translateY(20px)' }}
-            >
-              <div className="stat-item">
-                <span className="stat-number">10K+</span>
-                <span className="stat-label">추천 맛집</span>
+              <div className="stat-card">
+                <div className="stat-number">실시간</div>
+                <div className="stat-label">거리 계산</div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number">99%</span>
-                <span className="stat-label">정확도</span>
+
+              <div className="stat-card">
+                <div className="stat-number">AI</div>
+                <div className="stat-label">맛집 추천</div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number">24/7</span>
-                <span className="stat-label">서비스</span>
+
+              <div className="stat-card">
+                <div className="stat-number">정확한</div>
+                <div className="stat-label">좌표 정보</div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-number">실시간</div>
+                <div className="stat-label">검색 결과</div>
               </div>
             </div>
+
+            <div
+              className="mt-24 space-y-3 animate-fade-in-up"
+              style={{ animationDelay: '0.9s' }}
+            >
+              <div className="flex items-center gap-3 text-white/80">
+                <div className="w-2 h-2 bg-lime-600 rounded-full border border-white shadow"></div>
+                <span>Naver Dynamic Map API로 직관적인 지도 제공</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/80">
+                <div className="w-2 h-2 bg-lime-500 rounded-full border border-white shadow"></div>{' '}
+                <span>Naver Reverse Geocoding API로 좌표를 주소로 변환 </span>
+              </div>
+              <div className="flex items-center gap-3 text-white/80">
+                <div className="w-2 h-2 bg-lime-400 rounded-full border border-white shadow"></div>
+
+                <span>Naver Search API로 실시간 음식점 검색</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/80">
+                <div className="w-2 h-2 bg-lime-300 rounded-full border border-white shadow"></div>
+                <span>Naver Direction API로 거리 및 소요 시간 계산</span>
+              </div>
+              <div className="flex items-center gap-3 text-white/80">
+                <div className="w-2 h-2 bg-lime-200 rounded-full border border-white shadow"></div>
+                <span>Google Gemini AI로 음식점 비교 인사이트 제공</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
           </div>
         </div>
       </section>
@@ -195,7 +305,7 @@ function App() {
                 icon: '⚡',
                 title: '실시간 분석',
                 description:
-                  'AI가 실시간으로 위치를 분석하여 최적의 맛집을 추천합니다',
+                  'AI가 위치 기반 맛집을 맛, 분위기, 거리 등 다양한 기준으로 분석합니다',
                 delay: '0ms',
               },
               {
@@ -207,7 +317,7 @@ function App() {
               {
                 icon: '🌟',
                 title: '큐레이션',
-                description: '음식점에 대한 다양한 후기를 제공합니다',
+                description: '음식점에 대한 다양한 정보를 제공합니다',
                 delay: '400ms',
               },
             ].map((feature) => (
@@ -234,25 +344,65 @@ function App() {
 
       <section
         ref={mapSectionRef}
-        className="map-section"
+        className="map-section relative overflow-hidden"
         id="main-content"
         aria-label="지도 선택 섹션"
       >
-        <div className="container mx-auto px-6">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-300/10 rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10">
           <div className="map-container">
-            <div className="map-header text-center mb-8">
-              <h2 className="map-title">
-                <span className="title-icon" role="img" aria-label="위치">
-                  📍
-                </span>
+            <div className="map-header text-center mb-12">
+              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 text-white/90 text-base font-semibold mb-6 shadow-lg">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                AI 맛집 추천 시스템
+              </div>
+
+              <h2 className="map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-300 bg-clip-text text-transparent drop-shadow-lg">
                 지도에서 위치를 선택하세요
               </h2>
-              <p className="map-description">
-                원하는 위치을 클릭하면 AI가 가장 가까운 맛집을 찾아드립니다
+
+              <p className="map-description mb-8 text-lg md:text-xl font-medium text-white/90">
+                원하는 위치를 클릭하면{' '}
+                <span className="text-yellow-300 font-bold">
+                  AI가 근처의 맛집
+                </span>
+                을 찾아드립니다
               </p>
+
+              <div className="flex flex-wrap justify-center gap-4 mt-6">
+                {[
+                  {
+                    color: 'from-green-400 to-emerald-500',
+                    text: '실시간 거리 계산',
+                  },
+                  {
+                    color: 'from-blue-400 to-indigo-500',
+                    text: 'AI 기반 추천',
+                  },
+                  {
+                    color: 'from-purple-400 to-pink-400',
+                    text: '정확한 좌표 정보',
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={item.text}
+                    className={`px-5 py-2 rounded-full bg-gradient-to-r ${item.color} text-white font-semibold shadow-md text-sm md:text-base flex items-center gap-2`}
+                    style={{ animationDelay: `${idx * 0.1}s` }}
+                  >
+                    <span className="w-2 h-2 bg-white/80 rounded-full"></span>
+                    {item.text}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="map-wrapper">
+            <div className="map-wrapper relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-purple-500/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
               <NaverMap
                 onLocationSelect={handleLocationSelect}
                 restaurants={restaurants}
@@ -268,13 +418,22 @@ function App() {
         aria-label="검색 결과"
       >
         <div className="container mx-auto px-6">
-          <div className="results-header text-center mb-12">
-            <h2 className="results-title">
+          <div className="results-header text-center mb-12 flex items-center justify-center gap-4">
+            <h2 className="results-title mb-0">
               추천 맛집
               {restaurants.length > 0 && (
                 <span className="results-count">{restaurants.length}개</span>
               )}
             </h2>
+            {restaurants.length >= 2 && (
+              <button
+                onClick={handleCompare}
+                className="ml-4 px-6 py-3 rounded-xl bg-gradient-to-r from-green-200 to-emerald-300 text-green-900 font-semibold text-base shadow-sm border border-green-200 hover:from-green-300 hover:to-emerald-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-200/50 focus:ring-offset-1"
+                style={{ minWidth: 120 }}
+              >
+                AI 비교
+              </button>
+            )}
           </div>
 
           {error && (
@@ -345,6 +504,37 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {compareModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative animate-fade-in-up">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+              onClick={() => setCompareModalOpen(false)}
+              aria-label="비교 결과 닫기"
+            >
+              ×
+            </button>
+            <h3 className="text-xl font-bold mb-4 text-center text-purple-700">
+              AI 음식점 비교 결과
+            </h3>
+            {compareLoading && (
+              <div className="flex flex-col items-center py-8">
+                <div className="loading-spinner mb-4" />
+                <div className="text-gray-500">AI가 비교 중입니다...</div>
+              </div>
+            )}
+            {compareError && (
+              <div className="alert-error my-4">{compareError}</div>
+            )}
+            {!compareLoading && !compareError && compareResult && (
+              <div className="prose max-w-full overflow-x-auto">
+                <ReactMarkdown>{compareResult}</ReactMarkdown>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -521,7 +711,7 @@ const RestaurantCard = React.memo(({ restaurant, index }) => {
         </div>
       )}
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-2 mt-4 items-center">
         <button
           onClick={() =>
             openNaverMap(restaurant.lat, restaurant.lng, restaurant.name)
