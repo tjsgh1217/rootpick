@@ -1,5 +1,4 @@
 import NaverMap from './components/naverMap.tsx';
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { searchAIRestaurants } from './api';
 import './App.css';
@@ -201,14 +200,14 @@ function App() {
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center min-h-screen px-6 py-12">
           <div className="flex-1 max-w-2xl text-center lg:text-left lg:pr-12 mb-12 lg:mb-0">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm font-medium animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm font-medium animate-fade-in-up ml-4 mb-4">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 Naver API + Gemini AI 기반
               </div>
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
                 <span className="block">루트픽</span>
-                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-2">
+                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-4 ml-14 mb-20">
                   RootPick
                 </span>
               </h1>
