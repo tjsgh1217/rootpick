@@ -88,8 +88,33 @@ export class RestaurantService {
           `${this.extractCuisineType(restaurant.category)} 카테고리의 추천 맛집`,
       }));
 
-      console.log('🍽️ 메인메뉴 생성 시작...');
-      for (const restaurant of restaurantsWithInsights.slice(0, 3)) {
+      console.log('��️ 메인메뉴 생성 시작...');
+
+      async function asyncPool<T, R>(
+        poolLimit: number,
+        array: T[],
+        iteratorFn: (item: T, idx: number) => Promise<R>,
+      ): Promise<R[]> {
+        const ret: R[] = [];
+        const executing: Promise<void>[] = [];
+        for (let i = 0; i < array.length; i++) {
+          const p = iteratorFn(array[i], i).then((res) => {
+            ret[i] = res;
+          });
+          executing.push(p);
+          if (executing.length >= poolLimit) {
+            await Promise.race(executing);
+            executing.splice(
+              executing.findIndex((e) => e === p),
+              1,
+            );
+          }
+        }
+        await Promise.all(executing);
+        return ret;
+      }
+
+      await asyncPool(3, restaurantsWithInsights, async (restaurant) => {
         restaurant.representativeMenus =
           await this.geminiAiService.generateMainMenus(restaurant);
 
@@ -100,14 +125,18 @@ export class RestaurantService {
             `   ${restaurant.name}: ${restaurant.representativeMenus.join(', ')}`,
           );
         }
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
+      });
 
       const formattedResults = restaurantsWithInsights.map(
         (restaurant, index) => {
-          const walkDuration =
-            restaurant.distance > 0 ? Math.round(restaurant.distance / 75) : 0;
+          const isValidDistance =
+            typeof restaurant.distance === 'number' &&
+            !isNaN(restaurant.distance);
+          const walkDuration = isValidDistance
+            ? Math.round(restaurant.distance / 75)
+            : null;
+          const carDuration =
+            restaurant.duration > 0 ? `${restaurant.duration}분` : '1분 미만';
           return {
             id: index + 1,
             name: restaurant.name,
@@ -119,13 +148,13 @@ export class RestaurantService {
             cuisine: this.extractCuisineType(restaurant.category),
             area: this.extractAreaFromAddress(restaurant.address),
             displayDistance:
-              userLat && userLng && restaurant.duration > 0
+              userLat && userLng && isValidDistance
                 ? `${
                     restaurant.distance < 1000
                       ? restaurant.distance + 'm'
                       : (restaurant.distance / 1000).toFixed(1) + 'km'
-                  } (차량 ${restaurant.duration}분, 도보 약 ${walkDuration}분)`
-                : '주소 기반 검색',
+                  } (차량 ${carDuration}, 도보 약 ${walkDuration ?? '정보 없음'}분)`
+                : '거리 정보 없음',
             lat: restaurant.lat,
             lng: restaurant.lng,
             representativeMenus: restaurant.representativeMenus || [],
