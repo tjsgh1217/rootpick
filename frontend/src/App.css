@@ -233,13 +233,14 @@
 
 .map-section {
   padding: 8rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background: linear-gradient(135deg, #222 0%, #333 100%);
   position: relative;
 }
 
 .map-container {
   max-width: 1400px;
   margin: 0 auto;
+  margin-top: -50px;
 }
 
 .map-header {

@@ -16,6 +16,7 @@ function App() {
   const [compareResult, setCompareResult] = useState('');
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
+  const [mapVisible, setMapVisible] = useState(false);
 
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
@@ -56,6 +57,22 @@ function App() {
 
     return () => observer.disconnect();
   }, [restaurants]);
+
+  useEffect(() => {
+    const observer = new window.IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setMapVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+    if (mapSectionRef.current) {
+      observer.observe(mapSectionRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
 
   const scrollToResults = useCallback(() => {
     if (resultsRef.current) {
@@ -161,7 +178,7 @@ function App() {
       />
       <section
         ref={heroRef}
-        className="relative min-h-screen bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-300 overflow-hidden"
+        className="relative min-h-screen bg-gradient-to-br from-slate-700 via-gray-800 to-zinc-800 overflow-hidden"
         aria-label="메인 히어로 섹션"
       >
         <div className="absolute inset-0">
@@ -207,7 +224,7 @@ function App() {
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
                 <span className="block">루트픽</span>
-                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-4 ml-14 mb-20">
+                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-4 ml-14 mb-40">
                   RootPick
                 </span>
               </h1>
@@ -292,6 +309,7 @@ function App() {
           </div>
         </div>
       </section>
+
       <section
         ref={featuresRef}
         className="features-section"
@@ -343,37 +361,65 @@ function App() {
 
       <section
         ref={mapSectionRef}
-        className="map-section relative overflow-hidden"
+        className="map-section relative overflow-hidden bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900"
         id="main-content"
         aria-label="지도 선택 섹션"
       >
         <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
-          <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-300/10 rounded-full blur-xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-400/5 rounded-full blur-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-white/5"></div>
+
+          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div
+            className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/8 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: '2s' }}
+          ></div>
+          <div
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-3xl animate-pulse"
+            style={{ animationDelay: '4s' }}
+          ></div>
+
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]"></div>
         </div>
 
-        <div className="container mx-auto px-6 relative z-10">
+        <div className="container mx-auto px-10 relative z-10">
           <div className="map-container">
             <div className="map-header text-center mb-12">
-              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 text-white/90 text-base font-semibold mb-6 shadow-lg">
+              <div
+                className={`inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 text-white/90 text-base font-semibold mb-14 shadow-lg ${
+                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                }`}
+                style={mapVisible ? { animationDelay: '0.2s' } : {}}
+              >
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                 AI 맛집 추천 시스템
               </div>
 
-              <h2 className="map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-300 bg-clip-text text-transparent drop-shadow-lg">
+              <h2
+                className={`map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg ${
+                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                }`}
+                style={mapVisible ? { animationDelay: '0.4s' } : {}}
+              >
                 지도에서 위치를 선택하세요
               </h2>
 
-              <p className="map-description mb-8 text-lg md:text-xl font-medium text-white/90">
-                원하는 위치를 클릭하면{' '}
-                <span className="text-yellow-300 font-bold">
-                  AI가 근처의 맛집
-                </span>
-                을 찾아드립니다
+              <p
+                className={`map-description mb-8 text-lg md:text-xl font-medium text-white/90 ${
+                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                }`}
+                style={mapVisible ? { animationDelay: '0.6s' } : {}}
+              >
+                원하는 위치를 클릭하면 근처의 맛집을 찾아{' '}
+                <span className="text-yellow-300 font-bold">AI </span>가
+                비교해드립니다
               </p>
 
-              <div className="flex flex-wrap justify-center gap-4 mt-6">
+              <div
+                className={`flex flex-wrap justify-center gap-4 mt-6 ${
+                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                }`}
+                style={mapVisible ? { animationDelay: '0.8s' } : {}}
+              >
                 {[
                   {
                     color: 'from-green-400 to-emerald-500',
@@ -391,7 +437,11 @@ function App() {
                   <div
                     key={item.text}
                     className={`px-5 py-2 rounded-full bg-gradient-to-r ${item.color} text-white font-semibold shadow-md text-sm md:text-base flex items-center gap-2`}
-                    style={{ animationDelay: `${idx * 0.1}s` }}
+                    style={
+                      mapVisible
+                        ? { animationDelay: `${0.9 + idx * 0.1}s` }
+                        : {}
+                    }
                   >
                     <span className="w-2 h-2 bg-white/80 rounded-full"></span>
                     {item.text}
@@ -401,11 +451,19 @@ function App() {
             </div>
 
             <div className="map-wrapper relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-purple-500/10 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <NaverMap
-                onLocationSelect={handleLocationSelect}
-                restaurants={restaurants}
-              />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-blue-500/8 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
+              <div
+                className={`relative z-10 ${
+                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                }`}
+                style={mapVisible ? { animationDelay: '1.2s' } : {}}
+              >
+                <NaverMap
+                  onLocationSelect={handleLocationSelect}
+                  restaurants={restaurants}
+                />
+              </div>
             </div>
           </div>
         </div>
