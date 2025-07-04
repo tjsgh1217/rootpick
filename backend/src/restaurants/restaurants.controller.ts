@@ -8,10 +8,6 @@ interface LocationSearchDto {
   lng?: number;
 }
 
-interface PlaceSearchDto {
-  query: string;
-}
-
 @Controller('restaurants')
 export class RestaurantsController {
   constructor(
@@ -42,18 +38,6 @@ export class RestaurantsController {
     } catch (error) {
       console.error('❌ 음식점 검색 실패:', error);
       throw new Error('음식점 검색에 실패했습니다.');
-    }
-  }
-
-  @Post('search-places')
-  async searchPlaces(@Body() searchDto: PlaceSearchDto) {
-    try {
-      console.log('🔍 장소 검색 요청:', searchDto.query);
-      const places = await this.restaurantService.searchPlaces(searchDto.query);
-      return { items: places };
-    } catch (error) {
-      console.error('❌ 장소 검색 실패:', error);
-      return { items: [] };
     }
   }
 

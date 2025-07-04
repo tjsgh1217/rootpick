@@ -60,17 +60,17 @@ export class GeminiAiService {
         .map((line) => line.trim())
         .filter((line) => line.startsWith('-') || line.startsWith('•'))
         .map((line) => line.replace(/^[-•]\s*/, '').trim())
-        .filter((line) => /^[-•\d.]/.test(line))
+        .filter((line) => line.length > 0 && line.length < 20)
         .slice(0, 50);
 
-      // if (keywords.length === 0) {
-      //   return this.getExpandedDefaultKeywords(locationInfo);
-      // }
+      if (keywords.length === 0) {
+        return this.getExpandedDefaultKeywords(locationInfo);
+      }
 
       return keywords;
     } catch (error) {
       console.error('❌ AI 키워드 생성 실패:', error);
-      // return this.getExpandedDefaultKeywords(locationInfo);
+      return this.getExpandedDefaultKeywords(locationInfo);
       return [];
     }
   }
