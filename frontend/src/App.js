@@ -361,41 +361,41 @@ function App() {
 
       <section
         ref={mapSectionRef}
-        className="map-section relative overflow-hidden bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900"
+        className="map-section relative overflow-hidden bg-gradient-to-br from-slate-100 via-gray-100 to-zinc-200"
         id="main-content"
         aria-label="지도 선택 섹션"
       >
         <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-transparent to-white/5"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-blue-50/30"></div>
 
-          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div
-            className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/8 rounded-full blur-3xl animate-pulse"
+            className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: '2s' }}
           ></div>
           <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-3xl animate-pulse"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
             style={{ animationDelay: '4s' }}
           ></div>
 
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:100px_100px]"></div>
         </div>
 
         <div className="container mx-auto px-10 relative z-10">
           <div className="map-container">
             <div className="map-header text-center mb-12">
               <div
-                className={`inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 text-white/90 text-base font-semibold mb-14 shadow-lg ${
+                className={`inline-flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-full px-6 py-3 text-gray-800 text-base font-semibold mb-14 shadow-lg border border-gray-200/50 ${
                   mapVisible ? 'animate-fade-in-up' : 'opacity-0'
                 }`}
                 style={mapVisible ? { animationDelay: '0.2s' } : {}}
               >
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 AI 맛집 추천 시스템
               </div>
 
               <h2
-                className={`map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-lg ${
+                className={`map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight text-gray-800 drop-shadow-sm ${
                   mapVisible ? 'animate-fade-in-up' : 'opacity-0'
                 }`}
                 style={mapVisible ? { animationDelay: '0.4s' } : {}}
@@ -404,13 +404,13 @@ function App() {
               </h2>
 
               <p
-                className={`map-description mb-8 text-lg md:text-xl font-medium text-white/90 ${
+                className={`map-description mb-8 text-lg md:text-xl font-medium text-gray-700 ${
                   mapVisible ? 'animate-fade-in-up' : 'opacity-0'
                 }`}
                 style={mapVisible ? { animationDelay: '0.6s' } : {}}
               >
                 원하는 위치를 클릭하면 근처의 맛집을 찾아{' '}
-                <span className="text-yellow-300 font-bold">AI </span>가
+                <span className="text-orange-500 font-bold">AI </span>가
                 비교해드립니다
               </p>
 
@@ -422,28 +422,28 @@ function App() {
               >
                 {[
                   {
-                    color: 'from-green-400 to-emerald-500',
+                    color: 'from-green-500 to-emerald-600',
                     text: '실시간 거리 계산',
                   },
                   {
-                    color: 'from-blue-400 to-indigo-500',
+                    color: 'from-blue-500 to-indigo-600',
                     text: 'AI 기반 추천',
                   },
                   {
-                    color: 'from-purple-400 to-pink-400',
+                    color: 'from-purple-500 to-pink-500',
                     text: '정확한 좌표 정보',
                   },
                 ].map((item, idx) => (
                   <div
                     key={item.text}
-                    className={`px-5 py-2 rounded-full bg-gradient-to-r ${item.color} text-white font-semibold shadow-md text-sm md:text-base flex items-center gap-2`}
+                    className={`px-5 py-2 rounded-full bg-gradient-to-r ${item.color} text-white font-semibold shadow-lg text-sm md:text-base flex items-center gap-2`}
                     style={
                       mapVisible
                         ? { animationDelay: `${0.9 + idx * 0.1}s` }
                         : {}
                     }
                   >
-                    <span className="w-2 h-2 bg-white/80 rounded-full"></span>
+                    <span className="w-2 h-2 bg-white/90 rounded-full"></span>
                     {item.text}
                   </div>
                 ))}
@@ -451,8 +451,8 @@ function App() {
             </div>
 
             <div className="map-wrapper relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-blue-500/8 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-white/50 via-transparent to-blue-100/40 rounded-3xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-200/40 via-purple-200/40 to-pink-200/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
               <div
                 className={`relative z-10 ${
                   mapVisible ? 'animate-fade-in-up' : 'opacity-0'
