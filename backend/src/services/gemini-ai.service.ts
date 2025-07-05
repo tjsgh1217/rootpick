@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  NaverPlaceCrawlerService,
+  NaverPlaceData,
+} from './naver-place-crawler.service';
 
 export interface RestaurantInsight {
   name: string;
@@ -16,13 +20,19 @@ export interface RestaurantInsight {
   aiRecommendation: string;
   menu?: string[];
   insight?: string;
+  rating?: number;
+  reviewCount?: number;
+  priceRange?: string;
+  operatingHours?: string;
+  facilities?: string[];
+  recentReviews?: { rating: number; content: string }[];
 }
 
 @Injectable()
 export class GeminiAiService {
   private genAI: GoogleGenerativeAI;
 
-  constructor() {
+  constructor(private readonly naverCrawler: NaverPlaceCrawlerService) {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   }
 
@@ -71,7 +81,6 @@ export class GeminiAiService {
     } catch (error) {
       console.error('❌ AI 키워드 생성 실패:', error);
       return this.getExpandedDefaultKeywords(locationInfo);
-      return [];
     }
   }
 
@@ -182,22 +191,101 @@ export class GeminiAiService {
     return cleanCategory.split('>').pop() || cleanCategory;
   }
 
+  async enrichRestaurantData(
+    restaurants: RestaurantInsight[],
+  ): Promise<RestaurantInsight[]> {
+    const enrichedRestaurants: RestaurantInsight[] = [];
+
+    for (const restaurant of restaurants) {
+      try {
+        console.log(`🔍 ${restaurant.name} 추가 데이터 수집 중...`);
+
+        const naverData = await this.naverCrawler.crawlRestaurantData(
+          restaurant.name,
+          restaurant.address,
+        );
+
+        if (naverData) {
+          const enrichedRestaurant: RestaurantInsight = {
+            ...restaurant,
+            menu:
+              naverData.menus.length > 0
+                ? naverData.menus.map((m) => m.name)
+                : restaurant.menu,
+            insight: this.generateInsightFromNaverData(naverData),
+            rating: naverData.rating,
+            reviewCount: naverData.reviewCount,
+            priceRange: naverData.priceRange,
+            operatingHours: naverData.operatingHours,
+            facilities: naverData.facilities,
+            recentReviews: naverData.reviews,
+          };
+
+          enrichedRestaurants.push(enrichedRestaurant);
+        } else {
+          enrichedRestaurants.push(restaurant);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error(`❌ ${restaurant.name} 데이터 보강 실패:`, error);
+        enrichedRestaurants.push(restaurant);
+      }
+    }
+
+    return enrichedRestaurants;
+  }
+
+  private generateInsightFromNaverData(naverData: NaverPlaceData): string {
+    const insights: string[] = [];
+
+    if (naverData.rating >= 4.5) {
+      insights.push('⭐ 높은 평점의 인기 맛집');
+    } else if (naverData.rating >= 4.0) {
+      insights.push('⭐ 좋은 평점의 맛집');
+    }
+
+    if (naverData.reviewCount > 100) {
+      insights.push('👥 많은 리뷰를 보유한 검증된 맛집');
+    } else if (naverData.reviewCount > 50) {
+      insights.push('👥 적당한 리뷰를 보유한 맛집');
+    }
+
+    if (naverData.priceRange) {
+      insights.push(`💰 ${naverData.priceRange}`);
+    }
+
+    if (naverData.facilities.length > 0) {
+      insights.push(
+        `🏪 ${naverData.facilities.slice(0, 2).join(', ')} 이용 가능`,
+      );
+    }
+
+    if (naverData.menus.length > 0) {
+      insights.push(
+        `🍽️ ${naverData.menus
+          .slice(0, 2)
+          .map((m) => m.name)
+          .join(', ')} 등`,
+      );
+    }
+
+    return insights.join(' | ') || '일반적인 맛집';
+  }
+
   async compareRestaurants(restaurants: RestaurantInsight[]): Promise<string> {
     try {
-      console.log(
-        '[AI비교] compareRestaurants 호출, 음식점 수:',
-        restaurants.length,
-      );
-      console.log(
-        '[AI비교] AI에게 전달되는 음식점 정보:',
-        JSON.stringify(restaurants, null, 2),
-      );
+      console.log('[AI비교] 음식점 데이터 보강 시작...');
 
-      if (restaurants.length < 2) {
+      const enrichedRestaurants = await this.enrichRestaurantData(restaurants);
+
+      console.log('[AI비교] 데이터 보강 완료, AI 비교 분석 시작...');
+
+      if (enrichedRestaurants.length < 2) {
         return '비교하려면 최소 2개 이상의 음식점이 필요합니다.';
       }
 
-      const sortedRestaurants = [...restaurants].sort((a, b) => {
+      const sortedRestaurants = [...enrichedRestaurants].sort((a, b) => {
         if (!a.distance && !b.distance) return 0;
         if (!a.distance) return 1;
         if (!b.distance) return -1;
@@ -208,42 +296,51 @@ export class GeminiAiService {
         model: 'gemini-1.5-flash',
       });
 
-      const prompt = `다음 ${sortedRestaurants.length}개의 음식점을 거리순(가까운 곳부터)으로 비교 분석해주세요.
-  
-  음식점 정보:
-  ${sortedRestaurants
-    .map(
-      (r, i) =>
-        `${i + 1}. **${r.name}**
-     - 카테고리: ${r.category || '정보 없음'}
-     - 음식종류: ${this.extractCuisineType(r.category || '')}
-     - 주소: ${r.address}
-     - 대표메뉴: ${r.representativeMenus?.join(', ') || r.menu?.join(', ') || '메뉴 정보 수집 중'}
-     - 특징: ${r.description || r.insight || '일반적인 맛집'}
-     - 거리: ${r.distance > 0 ? (r.distance < 1000 ? r.distance + 'm' : (r.distance / 1000).toFixed(1) + 'km') : '정보 없음'}
-     - 소요시간: ${r.duration > 0 ? r.duration + '분' : '정보 없음'}`,
-    )
-    .join('\n\n')}
-  
-  위 음식점들을 다음 기준으로 **실용적이고 도움이 되는** 비교표를 만들어주세요:
-  
-  | 음식점 | 음식종류 | 접근성 | 예상가격대 | 추천상황 | 특징 |
-  |--------|----------|--------|------------|----------|------|
-  
-  각 항목 설명:
-  - **접근성**: 거리와 소요시간 기준 (가까움/보통/멀음)
-  - **예상가격대**: 음식 카테고리 기준 일반적 가격대 (저렴/보통/비싼)
-  - **추천상황**: 언제 방문하면 좋을지 (혼밥/데이트/회식/가족식사 등)
-  - **특징**: 각 음식점의 독특한 점이나 장점
-  
-  **중요**: 제공된 정보가 부족하더라도 카테고리와 위치를 바탕으로 합리적인 추정을 해주세요. "정보 없음"보다는 일반적인 추정값을 제공해주세요.`;
+      const prompt = `다음 ${sortedRestaurants.length}개의 음식점을 종합적으로 비교 분석해주세요.
 
-      console.log('[AI비교] 개선된 프롬프트 생성 완료');
+음식점 정보:
+${sortedRestaurants
+  .map(
+    (r, i) => `${i + 1}. **${r.name}**
+   - 카테고리: ${r.category || '정보 없음'}
+   - 음식종류: ${this.extractCuisineType(r.category || '')}
+   - 주소: ${r.address}
+   - 평점: ${r.rating ? r.rating + '점' : '정보 없음'} (리뷰 ${r.reviewCount || 0}개)
+   - 대표메뉴: ${r.menu?.join(', ') || r.representativeMenus?.join(', ') || '메뉴 정보 수집 중'}
+   - 가격대: ${r.priceRange || '정보 수집 중'}
+   - 운영시간: ${r.operatingHours || '정보 수집 중'}
+   - 편의시설: ${r.facilities?.join(', ') || '정보 없음'}
+   - 거리: ${r.distance > 0 ? (r.distance < 1000 ? r.distance + 'm' : (r.distance / 1000).toFixed(1) + 'km') : '정보 없음'}
+   - 소요시간: ${r.duration > 0 ? r.duration + '분' : '정보 없음'}
+   - 최근 리뷰 키워드: ${r.recentReviews?.map((rev) => rev.content.slice(0, 50)).join(' | ') || '리뷰 정보 없음'}`,
+  )
+  .join('\n\n')}
+
+위 정보를 바탕으로 다음과 같이 **실용적이고 상세한** 비교표를 만들어주세요:
+
+## 📊 음식점 비교 분석
+
+| 순위 | 음식점 | 평점/리뷰 | 가격대 | 접근성 | 추천상황 | 주요특징 |
+|------|--------|-----------|--------|--------|----------|----------|
+
+## 🎯 상황별 추천
+- **가성비 최고**: 
+- **평점 최고**: 
+- **접근성 최고**: 
+- **데이트 추천**: 
+- **가족식사 추천**: 
+
+## 💡 종합 의견
+각 음식점의 장단점과 언제 방문하면 좋을지 구체적으로 설명해주세요.
+
+**중요**: 실제 수집된 데이터(평점, 리뷰, 메뉴, 가격대)를 최대한 활용하여 구체적이고 실용적인 비교를 제공해주세요.`;
+
+      console.log('[AI비교] 보강된 데이터로 프롬프트 생성 완료');
       const result = await model.generateContent(prompt);
-      console.log('[AI비교] Gemini generateContent 호출 완료');
       const response = result.response;
       const text = response.text().trim();
-      console.log('[AI비교] Gemini 응답 텍스트:', text.slice(0, 200));
+
+      console.log('[AI비교] 향상된 AI 비교 분석 완료');
       return text;
     } catch (error) {
       console.error('❌ 음식점 비교 AI 실패:', error);
