@@ -22,10 +22,9 @@ export interface RestaurantInsight {
   insight?: string;
   rating?: number;
   reviewCount?: number;
-  priceRange?: string;
+  blogReviewCount?: number;
   operatingHours?: string;
-  facilities?: string[];
-  recentReviews?: { rating: number; content: string }[];
+  naverDescription?: string;
 }
 
 @Injectable()
@@ -74,21 +73,19 @@ export class GeminiAiService {
         .slice(0, 50);
 
       if (keywords.length === 0) {
-        return this.getExpandedDefaultKeywords(locationInfo);
+        return this.getExpandedDefaultKeywords();
+        // return [];
       }
 
       return keywords;
     } catch (error) {
       console.error('❌ AI 키워드 생성 실패:', error);
-      return this.getExpandedDefaultKeywords(locationInfo);
+      return this.getExpandedDefaultKeywords();
+      // return [];
     }
   }
 
-  private getExpandedDefaultKeywords(locationInfo: {
-    city: string;
-    district: string;
-    dong: string;
-  }): string[] {
+  private getExpandedDefaultKeywords(): string[] {
     return [
       '한식',
       '중식',
@@ -202,23 +199,17 @@ export class GeminiAiService {
 
         const naverData = await this.naverCrawler.crawlRestaurantData(
           restaurant.name,
-          restaurant.address,
         );
 
         if (naverData) {
           const enrichedRestaurant: RestaurantInsight = {
             ...restaurant,
-            menu:
-              naverData.menus.length > 0
-                ? naverData.menus.map((m) => m.name)
-                : restaurant.menu,
             insight: this.generateInsightFromNaverData(naverData),
             rating: naverData.rating,
             reviewCount: naverData.reviewCount,
-            priceRange: naverData.priceRange,
+            blogReviewCount: naverData.blogReviewCount,
             operatingHours: naverData.operatingHours,
-            facilities: naverData.facilities,
-            recentReviews: naverData.reviews,
+            naverDescription: naverData.naverDescription,
           };
 
           enrichedRestaurants.push(enrichedRestaurant);
@@ -251,29 +242,13 @@ export class GeminiAiService {
       insights.push('👥 적당한 리뷰를 보유한 맛집');
     }
 
-    if (naverData.priceRange) {
-      insights.push(`💰 ${naverData.priceRange}`);
-    }
-
-    if (naverData.facilities.length > 0) {
-      insights.push(
-        `🏪 ${naverData.facilities.slice(0, 2).join(', ')} 이용 가능`,
-      );
-    }
-
-    if (naverData.menus.length > 0) {
-      insights.push(
-        `🍽️ ${naverData.menus
-          .slice(0, 2)
-          .map((m) => m.name)
-          .join(', ')} 등`,
-      );
-    }
-
     return insights.join(' | ') || '일반적인 맛집';
   }
 
-  async compareRestaurants(restaurants: RestaurantInsight[]): Promise<string> {
+  async compareRestaurants(
+    restaurants: RestaurantInsight[],
+    userPreference: string,
+  ): Promise<string> {
     try {
       console.log('[AI비교] 음식점 데이터 보강 시작...');
 
@@ -296,51 +271,58 @@ export class GeminiAiService {
         model: 'gemini-1.5-flash',
       });
 
-      const prompt = `다음 ${sortedRestaurants.length}개의 음식점을 종합적으로 비교 분석해주세요.
+      const prompt = `사용자 선호사항: "${userPreference}"
 
-음식점 정보:
-${sortedRestaurants
-  .map(
-    (r, i) => `${i + 1}. **${r.name}**
-   - 카테고리: ${r.category || '정보 없음'}
-   - 음식종류: ${this.extractCuisineType(r.category || '')}
-   - 주소: ${r.address}
-   - 평점: ${r.rating ? r.rating + '점' : '정보 없음'} (리뷰 ${r.reviewCount || 0}개)
-   - 대표메뉴: ${r.menu?.join(', ') || r.representativeMenus?.join(', ') || '메뉴 정보 수집 중'}
-   - 가격대: ${r.priceRange || '정보 수집 중'}
-   - 운영시간: ${r.operatingHours || '정보 수집 중'}
-   - 편의시설: ${r.facilities?.join(', ') || '정보 없음'}
-   - 거리: ${r.distance > 0 ? (r.distance < 1000 ? r.distance + 'm' : (r.distance / 1000).toFixed(1) + 'km') : '정보 없음'}
-   - 소요시간: ${r.duration > 0 ? r.duration + '분' : '정보 없음'}
-   - 최근 리뷰 키워드: ${r.recentReviews?.map((rev) => rev.content.slice(0, 50)).join(' | ') || '리뷰 정보 없음'}`,
-  )
-  .join('\n\n')}
+      다음 ${sortedRestaurants.length}개의 음식점을 사용자 선호사항에 맞춰 종합적으로 비교 분석해주세요.
+      
+      ${sortedRestaurants
+        .map(
+          (r, i) => `## ${i + 1}. ${r.name}
+      - **카테고리**: ${r.category || '정보 없음'}
+      - **주소**: ${r.address}
+      - **평점**: ${r.rating ? r.rating + '점' : '정보 없음'}
+      - **리뷰 수**: ${r.reviewCount || 0}개
+      - **블로그 리뷰 수**: ${r.blogReviewCount || 0}개
+      - **대표메뉴**: ${r.menu?.join(', ') || r.representativeMenus?.join(', ') || '메뉴 정보 수집 중'}
+      - **운영시간**: ${r.operatingHours || '정보 수집 중'}
+      - **거리**: ${r.distance > 0 ? (r.distance < 1000 ? r.distance + 'm' : (r.distance / 1000).toFixed(1) + 'km') : '정보 없음'}
+      - **소요시간**: ${r.duration > 0 ? r.duration + '분' : '정보 없음'}
+      - **네이버 설명**: ${r.naverDescription || '설명 정보 없음'}
+      
+      ---`,
+        )
+        .join('\n\n')}
+      
+      **중요**: 사용자 선호사항 "${userPreference}"에 맞춰서 다음 기준으로 분석해주세요:
+      
+      1. **네이버 설명(naverDescription)** 분석: 각 음식점의 설명에서 사용자 선호사항과 일치하는 특징 찾기
+      2. **리뷰 수(reviewCount)** 분석: 인기도와 신뢰도 측면에서 평가
+      3. **블로그 리뷰 수(blogReviewCount)** 분석: SNS 인기도와 트렌드 측면에서 평가
+      
+      ## 📊 음식점 비교 분석
+      
+      각 음식점을 개별적으로 분석하고, 사용자 선호사항 "${userPreference}"에 맞는 정도를 평가해주세요.
+      
+      ## 🏆 사용자 선호사항별 추천
+      - **가장 적합한 음식점**: 
+      - **대안 음식점**: 
+      - **추천 이유**: 
+      
+      ## 💡 종합 의견
+      사용자의 선호사항 "${userPreference}"에 맞춰 각 음식점의 장단점과 언제 방문하면 좋을지 구체적으로 설명해주세요.
+      
+      **분석 기준**:
+      - 네이버 설명에서 선호사항과 일치하는 키워드나 특징
+      - 리뷰 수로 본 인기도와 신뢰도
+      - 블로그 리뷰 수로 본 SNS 트렌드
+      - 실제 수집된 데이터를 최대한 활용하여 구체적이고 실용적인 비교 제공`;
 
-위 정보를 바탕으로 다음과 같이 **실용적이고 상세한** 비교표를 만들어주세요:
-
-## 📊 음식점 비교 분석
-
-| 순위 | 음식점 | 평점/리뷰 | 가격대 | 접근성 | 추천상황 | 주요특징 |
-|------|--------|-----------|--------|--------|----------|----------|
-
-## 🎯 상황별 추천
-- **가성비 최고**: 
-- **평점 최고**: 
-- **접근성 최고**: 
-- **데이트 추천**: 
-- **가족식사 추천**: 
-
-## 💡 종합 의견
-각 음식점의 장단점과 언제 방문하면 좋을지 구체적으로 설명해주세요.
-
-**중요**: 실제 수집된 데이터(평점, 리뷰, 메뉴, 가격대)를 최대한 활용하여 구체적이고 실용적인 비교를 제공해주세요.`;
-
-      console.log('[AI비교] 보강된 데이터로 프롬프트 생성 완료');
+      console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
       const result = await model.generateContent(prompt);
       const response = result.response;
       const text = response.text().trim();
 
-      console.log('[AI비교] 향상된 AI 비교 분석 완료');
+      console.log('[AI비교] 사용자 선호사항 기반 AI 비교 분석 완료');
       return text;
     } catch (error) {
       console.error('❌ 음식점 비교 AI 실패:', error);

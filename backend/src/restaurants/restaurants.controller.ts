@@ -8,6 +8,11 @@ interface LocationSearchDto {
   lng?: number;
 }
 
+interface CompareRestaurantsDto {
+  restaurants: any[];
+  userPreference: string;
+}
+
 @Controller('restaurants')
 export class RestaurantsController {
   constructor(
@@ -42,7 +47,7 @@ export class RestaurantsController {
   }
 
   @Post('compare')
-  async compareRestaurants(@Body() body: { restaurants: any[] }) {
+  async compareRestaurants(@Body() body: CompareRestaurantsDto) {
     try {
       if (
         !body.restaurants ||
@@ -51,8 +56,16 @@ export class RestaurantsController {
       ) {
         throw new Error('비교할 음식점 리스트가 2개 이상 필요합니다.');
       }
+
+      if (!body.userPreference || !body.userPreference.trim()) {
+        throw new Error('사용자 선호사항이 필요합니다.');
+      }
+
+      console.log('🎯 사용자 선호사항:', body.userPreference);
+
       const result = await this.geminiAiService.compareRestaurants(
         body.restaurants,
+        body.userPreference.trim(),
       );
       return { result };
     } catch (error) {
