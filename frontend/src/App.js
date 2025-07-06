@@ -17,6 +17,8 @@ function App() {
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState('');
   const [mapVisible, setMapVisible] = useState(false);
+  const [userPreference, setUserPreference] = useState('');
+  const [showPreferenceInput, setShowPreferenceInput] = useState(false);
 
   const heroRef = useRef(null);
   const featuresRef = useRef(null);
@@ -147,6 +149,11 @@ function App() {
   }, []);
 
   const handleCompare = async () => {
+    if (!userPreference.trim()) {
+      setCompareError('선호사항을 입력해주세요.');
+      return;
+    }
+
     try {
       setCompareLoading(true);
       setCompareError('');
@@ -155,6 +162,7 @@ function App() {
 
       const res = await axios.post('/restaurants/compare', {
         restaurants: restaurants,
+        userPreference: userPreference.trim(),
       });
 
       setCompareResult(res.data.result);
@@ -483,15 +491,68 @@ function App() {
               )}
             </h2>
             {restaurants.length >= 2 && (
-              <button
-                onClick={handleCompare}
-                className="ml-4 px-6 py-3 rounded-xl bg-gradient-to-r from-green-200 to-emerald-300 text-green-900 font-semibold text-base shadow-sm border border-green-200 hover:from-green-300 hover:to-emerald-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-200/50 focus:ring-offset-1"
-                style={{ minWidth: 120 }}
-              >
-                AI 비교
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setShowPreferenceInput(!showPreferenceInput)}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-200 to-pink-300 text-purple-900 font-semibold text-base shadow-sm border border-purple-200 hover:from-purple-300 hover:to-pink-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-200/50 focus:ring-offset-1"
+                  style={{ minWidth: 120 }}
+                >
+                  선호사항 입력
+                </button>
+                <button
+                  onClick={handleCompare}
+                  disabled={!userPreference.trim()}
+                  className={`px-6 py-3 rounded-xl font-semibold text-base shadow-sm border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
+                    userPreference.trim()
+                      ? 'bg-gradient-to-r from-green-200 to-emerald-300 text-green-900 border-green-200 hover:from-green-300 hover:to-emerald-400 hover:shadow-md focus:ring-green-200/50'
+                      : 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed'
+                  }`}
+                  style={{ minWidth: 120 }}
+                >
+                  AI 비교
+                </button>
+              </div>
             )}
           </div>
+
+          {showPreferenceInput && restaurants.length >= 2 && (
+            <div
+              className="mb-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 shadow-lg"
+              data-scroll-reveal
+            >
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                  어떤 맛집을 찾고 계신가요?
+                </h3>
+                <p className="text-sm text-purple-600">
+                  예시: "분위기가 좋은 다이닝", "가성비 좋은 맛집", "데이트하기
+                  좋은 곳", "가족과 함께 가기 좋은 곳"
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={userPreference}
+                  onChange={(e) => setUserPreference(e.target.value)}
+                  placeholder="원하는 맛집의 특징을 자유롭게 입력해주세요."
+                  className="flex-1 px-4 py-3 rounded-xl border border-purple-200 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-200"
+                  maxLength={100}
+                />
+                <button
+                  onClick={() => setUserPreference('')}
+                  className="px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors duration-200"
+                >
+                  초기화
+                </button>
+              </div>
+              {userPreference && (
+                <div className="mt-3 text-sm text-purple-700">
+                  입력된 선호사항:{' '}
+                  <span className="font-semibold">"{userPreference}"</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && (
             <div className="alert-error" data-scroll-reveal role="alert">
@@ -563,32 +624,46 @@ function App() {
       </footer>
 
       {compareModalOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative animate-fade-in-up">
-            <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
-              onClick={() => setCompareModalOpen(false)}
-              aria-label="비교 결과 닫기"
-            >
-              ×
-            </button>
-            <h3 className="text-xl font-bold mb-4 text-center text-purple-700">
-              AI 음식점 비교 결과
-            </h3>
-            {compareLoading && (
-              <div className="flex flex-col items-center py-8">
-                <div className="loading-spinner mb-4" />
-                <div className="text-gray-500">AI가 비교 중입니다...</div>
-              </div>
-            )}
-            {compareError && (
-              <div className="alert-error my-4">{compareError}</div>
-            )}
-            {!compareLoading && !compareError && compareResult && (
-              <div className="prose max-w-full overflow-x-auto">
-                <ReactMarkdown>{compareResult}</ReactMarkdown>
-              </div>
-            )}
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in-up">
+            <div className="flex-shrink-0 p-6 border-b border-gray-200">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-10"
+                onClick={() => setCompareModalOpen(false)}
+                aria-label="비교 결과 닫기"
+              >
+                ×
+              </button>
+              <h3 className="text-xl font-bold text-center text-purple-700 pr-8">
+                AI 음식점 비교 결과
+              </h3>
+              {userPreference && (
+                <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="text-sm text-purple-700">
+                    <strong>선호사항:</strong> {userPreference}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {compareLoading && (
+                <div className="flex flex-col items-center py-8">
+                  <div className="loading-spinner mb-4" />
+                  <div className="text-gray-500">
+                    AI가 선호사항을 바탕으로 비교 중입니다...
+                  </div>
+                </div>
+              )}
+              {compareError && (
+                <div className="alert-error my-4">{compareError}</div>
+              )}
+              {!compareLoading && !compareError && compareResult && (
+                <div className="prose max-w-full">
+                  <ReactMarkdown>{compareResult}</ReactMarkdown>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
