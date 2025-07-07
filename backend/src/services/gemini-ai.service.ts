@@ -19,7 +19,6 @@ export interface RestaurantInsight {
   duration: number;
   aiRecommendation: string;
   menu?: string[];
-  insight?: string;
   rating?: number;
   reviewCount?: number;
   blogReviewCount?: number;
@@ -191,58 +190,69 @@ export class GeminiAiService {
   async enrichRestaurantData(
     restaurants: RestaurantInsight[],
   ): Promise<RestaurantInsight[]> {
-    const enrichedRestaurants: RestaurantInsight[] = [];
+    try {
+      console.log(`🔍 ${restaurants.length}개 음식점 동시 크롤링 시작...`);
 
-    for (const restaurant of restaurants) {
-      try {
-        console.log(`🔍 ${restaurant.name} 추가 데이터 수집 중...`);
+      const restaurantNames = restaurants.map((r) => r.name);
 
-        const naverData = await this.naverCrawler.crawlRestaurantData(
-          restaurant.name,
-        );
+      const naverDataResults = await this.naverCrawler.crawlMultipleRestaurants(
+        restaurantNames,
+        3,
+      );
 
-        if (naverData) {
-          const enrichedRestaurant: RestaurantInsight = {
-            ...restaurant,
-            insight: this.generateInsightFromNaverData(naverData),
-            rating: naverData.rating,
-            reviewCount: naverData.reviewCount,
-            blogReviewCount: naverData.blogReviewCount,
-            operatingHours: naverData.operatingHours,
-            naverDescription: naverData.naverDescription,
-          };
+      console.log(
+        `✅ 크롤링 완료: ${naverDataResults.length}개 음식점 데이터 수집됨`,
+      );
 
-          enrichedRestaurants.push(enrichedRestaurant);
+      console.log('📊 크롤링된 데이터 상세:');
+      naverDataResults.forEach((data, index) => {
+        if (data) {
+          console.log(`\n🍽️ ${index + 1}. ${data.name}`);
+          console.log(`   평점: ${data.rating}점`);
+          console.log(`   리뷰 수: ${data.reviewCount}개`);
+          console.log(`   블로그 리뷰: ${data.blogReviewCount}개`);
+          console.log(`   영업시간: ${data.operatingHours || '정보 없음'}`);
+          console.log(
+            `   네이버 설명: ${data.naverDescription ? data.naverDescription.substring(0, 100) + '...' : '정보 없음'}`,
+          );
         } else {
-          enrichedRestaurants.push(restaurant);
+          console.log(`\n❌ ${index + 1}. 크롤링 실패`);
         }
+      });
 
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      } catch (error) {
-        console.error(`❌ ${restaurant.name} 데이터 보강 실패:`, error);
-        enrichedRestaurants.push(restaurant);
-      }
+      const naverDataMap = new Map<string, NaverPlaceData>();
+      naverDataResults.forEach((data) => {
+        if (data) {
+          naverDataMap.set(data.name, data);
+        }
+      });
+
+      // 원본 음식점 데이터와 크롤링 결과를 매핑하여 보강 (기존 로직 유지)
+      const enrichedRestaurants: RestaurantInsight[] = restaurants.map(
+        (restaurant) => {
+          const naverData = naverDataMap.get(restaurant.name);
+
+          if (naverData) {
+            const enrichedRestaurant: RestaurantInsight = {
+              ...restaurant,
+              rating: naverData.rating,
+              reviewCount: naverData.reviewCount,
+              blogReviewCount: naverData.blogReviewCount,
+              operatingHours: naverData.operatingHours,
+              naverDescription: naverData.naverDescription,
+            };
+            return enrichedRestaurant;
+          } else {
+            return restaurant;
+          }
+        },
+      );
+
+      return enrichedRestaurants;
+    } catch (error) {
+      console.error('❌ 음식점 데이터 보강 실패:', error);
+      return restaurants; // 실패 시 원본 데이터 반환
     }
-
-    return enrichedRestaurants;
-  }
-
-  private generateInsightFromNaverData(naverData: NaverPlaceData): string {
-    const insights: string[] = [];
-
-    if (naverData.rating >= 4.5) {
-      insights.push('⭐ 높은 평점의 인기 맛집');
-    } else if (naverData.rating >= 4.0) {
-      insights.push('⭐ 좋은 평점의 맛집');
-    }
-
-    if (naverData.reviewCount > 100) {
-      insights.push('👥 많은 리뷰를 보유한 검증된 맛집');
-    } else if (naverData.reviewCount > 50) {
-      insights.push('👥 적당한 리뷰를 보유한 맛집');
-    }
-
-    return insights.join(' | ') || '일반적인 맛집';
   }
 
   async compareRestaurants(
@@ -271,51 +281,37 @@ export class GeminiAiService {
         model: 'gemini-1.5-flash',
       });
 
+      const best = sortedRestaurants.slice(0, 2);
+      const good = sortedRestaurants.slice(2, 4);
+      const alt = sortedRestaurants.slice(4, 6);
+
       const prompt = `사용자 선호사항: "${userPreference}"
 
-      다음 ${sortedRestaurants.length}개의 음식점을 사용자 선호사항에 맞춰 종합적으로 비교 분석해주세요.
-      
-      ${sortedRestaurants
-        .map(
-          (r, i) => `## ${i + 1}. ${r.name}
-      - **카테고리**: ${r.category || '정보 없음'}
-      - **주소**: ${r.address}
-      - **평점**: ${r.rating ? r.rating + '점' : '정보 없음'}
-      - **리뷰 수**: ${r.reviewCount || 0}개
-      - **블로그 리뷰 수**: ${r.blogReviewCount || 0}개
-      - **대표메뉴**: ${r.menu?.join(', ') || r.representativeMenus?.join(', ') || '메뉴 정보 수집 중'}
-      - **운영시간**: ${r.operatingHours || '정보 수집 중'}
-      - **거리**: ${r.distance > 0 ? (r.distance < 1000 ? r.distance + 'm' : (r.distance / 1000).toFixed(1) + 'km') : '정보 없음'}
-      - **소요시간**: ${r.duration > 0 ? r.duration + '분' : '정보 없음'}
-      - **네이버 설명**: ${r.naverDescription || '설명 정보 없음'}
-      
-      ---`,
-        )
-        .join('\n\n')}
-      
-      **중요**: 사용자 선호사항 "${userPreference}"에 맞춰서 다음 기준으로 분석해주세요:
-      
-      1. **네이버 설명(naverDescription)** 분석: 각 음식점의 설명에서 사용자 선호사항과 일치하는 특징 찾기
-      2. **리뷰 수(reviewCount)** 분석: 인기도와 신뢰도 측면에서 평가
-      3. **블로그 리뷰 수(blogReviewCount)** 분석: SNS 인기도와 트렌드 측면에서 평가
-      
-      ## 📊 음식점 비교 분석
-      
-      각 음식점을 개별적으로 분석하고, 사용자 선호사항 "${userPreference}"에 맞는 정도를 평가해주세요.
-      
-      ## 🏆 사용자 선호사항별 추천
-      - **가장 적합한 음식점**: 
-      - **대안 음식점**: 
-      - **추천 이유**: 
-      
-      ## 💡 종합 의견
-      사용자의 선호사항 "${userPreference}"에 맞춰 각 음식점의 장단점과 언제 방문하면 좋을지 구체적으로 설명해주세요.
-      
+      다음 ${sortedRestaurants.length}개의 음식점을 사용자 선호사항에 맞춰 카테고리별로 그룹화하여 분석해주세요.
+
+      정확히 일치하는 식당이 없더라도, 가장 비슷하거나 일부 조건만 부합하는 식당이라도 반드시 추천 목록에 포함해서 출력해 주세요.
+      모든 그룹(최고 추천, 좋은 선택, 대안 옵션)에 최소 1개 이상 식당을 반드시 포함해 주세요.
+
+      ## 🍽️ "${userPreference}" 맞춤 음식점 분석
+
+      ### 🥇 최고 추천 (선호사항 완벽 부합)
+${best.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+
+      ### 🥈 좋은 선택 (선호사항 부분 부합)
+${good.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+
+      ### 🥉 대안 옵션 (선호사항과 다르지만 고려 가능)
+${alt.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+
       **분석 기준**:
-      - 네이버 설명에서 선호사항과 일치하는 키워드나 특징
-      - 리뷰 수로 본 인기도와 신뢰도
-      - 블로그 리뷰 수로 본 SNS 트렌드
-      - 실제 수집된 데이터를 최대한 활용하여 구체적이고 실용적인 비교 제공`;
+      - 사용자 선호사항 "${userPreference}"와의 일치도
+      - 네이버 설명에서 발견되는 관련 키워드
+      - 방문자 리뷰 수와 블로그 리뷰 수를 통한 인기도
+      - 접근성 (거리/소요시간)
+      
+      각 그룹별로 간결하게 정리하고, 긴 표나 상세 분석은 피해주세요.
+      
+      `;
 
       console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
       const result = await model.generateContent(prompt);

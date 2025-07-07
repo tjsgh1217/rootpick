@@ -34,55 +34,37 @@ export class NaverPlaceCrawlerService {
     restaurantName: string,
   ): Promise<NaverPlaceData | null> {
     let page: puppeteer.Page | null = null;
-
     try {
       await this.initBrowser();
       page = await this.browser!.newPage();
-
       await page.setUserAgent(
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
-
       await page.setViewport({ width: 1920, height: 1080 });
-
-      // 브라우저 콘솔 로그 완전 비활성화
-      page.on('console', () => {
-        // 모든 콘솔 로그 무시
-      });
+      page.on('console', () => {});
 
       const mapSearchUrl = `https://map.naver.com/v5/search/${encodeURIComponent(restaurantName)}`;
-      console.log(`🔍 네이버 지도 직접 검색: ${restaurantName}`);
-
       await page.goto(mapSearchUrl, {
         waitUntil: 'networkidle2',
         timeout: 30000,
       });
-
       await new Promise((resolve) => setTimeout(resolve, 10000));
 
       const frames = page.frames();
-
       const listFrame = frames.find((f) => f.url().includes('place/list'));
       if (listFrame) {
-        console.log('📋 리스트 iframe에서 첫 번째 음식점 클릭 시도...');
-
         try {
           await listFrame.waitForSelector('li.VLTHu.OW9LQ', { timeout: 10000 });
-
           await listFrame.evaluate(() => {
             const firstItem = document.querySelector('li.VLTHu.OW9LQ a');
             if (firstItem) {
               (firstItem as HTMLElement).click();
-              console.log('첫 번째 음식점 클릭 완료');
               return true;
             }
             return false;
           });
-
           await new Promise((resolve) => setTimeout(resolve, 5000));
-        } catch {
-          console.log('리스트에서 클릭 실패, 직접 상세 페이지 접근 시도...');
-        }
+        } catch {}
       }
 
       const updatedFrames = page.frames();
@@ -95,18 +77,13 @@ export class NaverPlaceCrawlerService {
 
       if (entryFrame) {
         if (entryFrame.url().includes('/photo')) {
-          console.log('📸 photo 페이지 감지, 정보 페이지로 이동 시도...');
-
           const homeUrl = entryFrame.url().replace('/photo', '/home');
           try {
             await entryFrame.goto(homeUrl, {
               waitUntil: 'networkidle2',
               timeout: 10000,
             });
-            console.log('✅ home 페이지로 이동 완료');
           } catch {
-            console.log('❌ home 페이지 이동 실패, 탭 클릭 시도...');
-
             await entryFrame.evaluate(() => {
               const tabs = document.querySelectorAll('a, button, .tab');
               for (const tab of tabs) {
@@ -116,17 +93,14 @@ export class NaverPlaceCrawlerService {
                   (tab as HTMLElement).getAttribute('href')?.includes('/home')
                 ) {
                   (tab as HTMLElement).click();
-                  console.log('정보 탭 클릭 완료');
                   return;
                 }
               }
             });
           }
-
           await new Promise((resolve) => setTimeout(resolve, 5000));
         }
 
-        console.log('📖 정보 더보기 버튼 클릭 시도...');
         try {
           const moreInfoClicked = await entryFrame.evaluate(() => {
             const moreInfoSelectors = [
@@ -137,7 +111,6 @@ export class NaverPlaceCrawlerService {
               'button:contains("더보기")',
               'a:contains("더보기")',
             ];
-
             for (const selector of moreInfoSelectors) {
               const button = document.querySelector(selector);
               if (button) {
@@ -147,34 +120,24 @@ export class NaverPlaceCrawlerService {
                   textContent.includes('더보기')
                 ) {
                   (button as HTMLElement).click();
-                  console.log('정보 더보기 버튼 클릭 완료');
                   return true;
                 }
               }
             }
-
             const allLinks = document.querySelectorAll('a');
             for (const link of allLinks) {
               const text = link.textContent || '';
               if (text.includes('정보') && text.includes('더보기')) {
                 (link as HTMLElement).click();
-                console.log('텍스트 기반 정보 더보기 버튼 클릭 완료');
                 return true;
               }
             }
-
             return false;
           });
-
           if (moreInfoClicked) {
-            console.log('✅ 정보 더보기 버튼 클릭 성공');
             await new Promise((resolve) => setTimeout(resolve, 5000));
-          } else {
-            console.log('❌ 정보 더보기 버튼을 찾을 수 없음');
           }
-        } catch (error) {
-          console.log('정보 더보기 버튼 클릭 실패:', error);
-        }
+        } catch (error) {}
 
         const detailData = await entryFrame.evaluate(() => {
           const data: {
@@ -186,7 +149,6 @@ export class NaverPlaceCrawlerService {
             reviewCount?: number;
             blogReviewCount?: number;
           } = {};
-
           const nameSelectors = [
             'h1.Fc1rA',
             '.place_name',
@@ -198,11 +160,9 @@ export class NaverPlaceCrawlerService {
             const nameEl = document.querySelector(selector);
             if (nameEl && nameEl.textContent?.trim()) {
               data.name = nameEl.textContent.trim();
-              console.log('음식점 이름 발견:', data.name);
               break;
             }
           }
-
           const ratingSelectors = [
             'span.PXMot.LXIwF',
             'em.rating',
@@ -217,12 +177,10 @@ export class NaverPlaceCrawlerService {
               const rating = parseFloat(ratingText);
               if (!isNaN(rating) && rating > 0) {
                 data.rating = rating;
-                console.log('평점 발견:', data.rating);
                 break;
               }
             }
           }
-
           const descriptionSelectors = [
             'div.T8RFa',
             '.place_section .description',
@@ -239,28 +197,20 @@ export class NaverPlaceCrawlerService {
             'div[class*="intro"]',
             'div[class*="summary"]',
           ];
-
           for (const selector of descriptionSelectors) {
             const descEl = document.querySelector(selector);
             if (descEl && descEl.textContent?.trim()) {
               const descText = descEl.textContent.trim();
-
               if (descText.length > 20) {
                 data.naverDescription = descText
                   .replace(/\s+/g, ' ')
                   .replace(/\n+/g, ' ')
                   .replace(/더보기|접기|펼치기/g, '')
                   .trim();
-
-                console.log(
-                  '네이버 디스크립션 발견:',
-                  data.naverDescription.substring(0, 100) + '...',
-                );
                 break;
               }
             }
           }
-
           if (!data.naverDescription) {
             const textSelectors = [
               '.place_section_content',
@@ -268,7 +218,6 @@ export class NaverPlaceCrawlerService {
               '.restaurant_info',
               '.store_info',
             ];
-
             for (const selector of textSelectors) {
               const sections = document.querySelectorAll(selector);
               for (const section of sections) {
@@ -285,18 +234,12 @@ export class NaverPlaceCrawlerService {
                     .replace(/\s+/g, ' ')
                     .replace(/\n+/g, ' ')
                     .trim();
-
-                  console.log(
-                    '대체 위치에서 네이버 디스크립션 발견:',
-                    data.naverDescription.substring(0, 100) + '...',
-                  );
                   break;
                 }
               }
               if (data.naverDescription) break;
             }
           }
-
           const hoursSelectors = [
             '.A_cdD',
             '.operating_hours',
@@ -308,11 +251,9 @@ export class NaverPlaceCrawlerService {
             const hoursEl = document.querySelector(selector);
             if (hoursEl && hoursEl.textContent?.trim()) {
               data.operatingHours = hoursEl.textContent.trim();
-              console.log('영업시간 발견:', data.operatingHours);
               break;
             }
           }
-
           const categorySelectors = [
             '.DJJvD',
             '.category',
@@ -323,11 +264,9 @@ export class NaverPlaceCrawlerService {
             const categoryEl = document.querySelector(selector);
             if (categoryEl && categoryEl.textContent?.trim()) {
               data.category = categoryEl.textContent.trim();
-              console.log('카테고리 발견:', data.category);
               break;
             }
           }
-
           const reviewSelectors = [
             'a[href*="/review/visitor"]',
             'a[href*="/review"]',
@@ -339,12 +278,10 @@ export class NaverPlaceCrawlerService {
               const reviewText = reviewEl.textContent.replace(/[^\d]/g, '');
               if (reviewText) {
                 data.reviewCount = parseInt(reviewText, 10);
-                console.log('리뷰 수 발견:', data.reviewCount);
                 break;
               }
             }
           }
-
           const blogReviewEl = document.querySelector('a[href*="/review/ugc"]');
           if (blogReviewEl && blogReviewEl.textContent) {
             const blogReviewText = blogReviewEl.textContent.replace(
@@ -353,20 +290,8 @@ export class NaverPlaceCrawlerService {
             );
             if (blogReviewText) {
               data.blogReviewCount = parseInt(blogReviewText, 10);
-              console.log('블로그 리뷰 수 발견:', data.blogReviewCount);
             }
           }
-
-          console.log('DOM 구조 확인:');
-          console.log(
-            '- Pibes 클래스 존재:',
-            !!document.querySelector('.Pibes'),
-          );
-          console.log(
-            '- T8RFa 클래스 존재:',
-            !!document.querySelector('.T8RFa'),
-          );
-
           return data;
         });
 
@@ -378,21 +303,38 @@ export class NaverPlaceCrawlerService {
           operatingHours: detailData.operatingHours || '',
           naverDescription: detailData.naverDescription || '',
         };
-
-        console.log('✅ 최종 추출 데이터:', JSON.stringify(result, null, 2));
         return result;
       }
-
-      console.log('❌ 상세 정보 iframe을 찾을 수 없음');
       return null;
     } catch (error) {
-      console.error(`❌ ${restaurantName} 크롤링 실패:`, error);
       return null;
     } finally {
       if (page) {
         await page.close();
       }
     }
+  }
+
+  async crawlMultipleRestaurants(
+    restaurantNames: string[],
+    concurrency: number = 5,
+  ): Promise<NaverPlaceData[]> {
+    await this.initBrowser();
+
+    const results: (NaverPlaceData | null)[] = [];
+
+    // 배치 단위로 처리
+    for (let i = 0; i < restaurantNames.length; i += concurrency) {
+      const batch = restaurantNames.slice(i, i + concurrency);
+      const batchPromises = batch.map((name) => this.crawlRestaurantData(name));
+
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+    }
+
+    await this.closeBrowser();
+
+    return results.filter((r): r is NaverPlaceData => !!r);
   }
 
   async closeBrowser() {
