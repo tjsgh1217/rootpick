@@ -232,9 +232,12 @@ function App() {
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
                 <span className="block">루트픽</span>
-                <span className="block text-2xl md:text-3xl lg:text-4xl font-normal text-white/80 mt-4 ml-14 mb-40">
-                  RootPick
-                </span>
+                <img
+                  src={process.env.PUBLIC_URL + '/rootpick-favicon.png'}
+                  alt="RootPick Logo"
+                  className="mx-auto mt-16 mb-16 ml-24 w-20 h-20 rounded-full shadow-lg"
+                  style={{ background: 'white' }}
+                />
               </h1>
 
               <p
@@ -330,13 +333,14 @@ function App() {
                 icon: '⚡',
                 title: '실시간 분석',
                 description:
-                  'AI가 위치 기반 맛집을 맛, 분위기, 거리 등 다양한 기준으로 분석합니다',
+                  'AI가 사용자의 취향에 맞춰 맛, 분위기, 리뷰 등을 종합적으로 분석합니다',
                 delay: '0ms',
               },
               {
                 icon: '🎯',
                 title: '정확한 위치',
-                description: 'GPS 기반으로 정확한 거리와 방향을 제공합니다',
+                description:
+                  '위치 좌표를 기반으로 정확한 거리와 방향을 제공합니다',
                 delay: '200ms',
               },
               {
@@ -545,12 +549,6 @@ function App() {
                   초기화
                 </button>
               </div>
-              {userPreference && (
-                <div className="mt-3 text-sm text-purple-700">
-                  입력된 선호사항:{' '}
-                  <span className="font-semibold">"{userPreference}"</span>
-                </div>
-              )}
             </div>
           )}
 
@@ -567,10 +565,6 @@ function App() {
             <div className="loading-container">
               <div className="loading-animation">
                 <div className="loading-spinner" aria-label="로딩 중" />
-
-                {selectedLocation && (
-                  <p className="loading-location">{selectedLocation.address}</p>
-                )}
               </div>
             </div>
           )}
@@ -607,8 +601,9 @@ function App() {
             <div className="location-info" data-scroll-reveal>
               <strong>검색한 위치</strong>
               <div className="coordinates">
-                위도: {selectedLocation.lat.toFixed(6)} | 경도:{' '}
-                {selectedLocation.lng.toFixed(6)}
+                {selectedLocation && (
+                  <p className="loading-location">{selectedLocation.address}</p>
+                )}
               </div>
             </div>
           )}
@@ -639,9 +634,7 @@ function App() {
               </h3>
               {userPreference && (
                 <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-purple-700">
-                    <strong>선호사항:</strong> {userPreference}
-                  </p>
+                  <p className="text-sm text-purple-700">{userPreference}</p>
                 </div>
               )}
             </div>
@@ -651,7 +644,7 @@ function App() {
                 <div className="flex flex-col items-center py-8">
                   <div className="loading-spinner mb-4" />
                   <div className="text-gray-500">
-                    AI가 선호사항을 바탕으로 비교 중입니다...
+                    AI가 선호사항을 바탕으로 비교 중입니다
                   </div>
                 </div>
               )}
