@@ -323,7 +323,6 @@ export class NaverPlaceCrawlerService {
 
     const results: (NaverPlaceData | null)[] = [];
 
-    // 배치 단위로 처리
     for (let i = 0; i < restaurantNames.length; i += concurrency) {
       const batch = restaurantNames.slice(i, i + concurrency);
       const batchPromises = batch.map((name) => this.crawlRestaurantData(name));

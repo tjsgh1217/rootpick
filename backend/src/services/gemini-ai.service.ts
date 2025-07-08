@@ -227,7 +227,6 @@ export class GeminiAiService {
         }
       });
 
-      // 원본 음식점 데이터와 크롤링 결과를 매핑하여 보강 (기존 로직 유지)
       const enrichedRestaurants: RestaurantInsight[] = restaurants.map(
         (restaurant) => {
           const naverData = naverDataMap.get(restaurant.name);
@@ -251,7 +250,7 @@ export class GeminiAiService {
       return enrichedRestaurants;
     } catch (error) {
       console.error('❌ 음식점 데이터 보강 실패:', error);
-      return restaurants; // 실패 시 원본 데이터 반환
+      return restaurants;
     }
   }
 
@@ -285,33 +284,49 @@ export class GeminiAiService {
       const good = sortedRestaurants.slice(2, 4);
       const alt = sortedRestaurants.slice(4, 6);
 
-      const prompt = `사용자 선호사항: "${userPreference}"
+      const prompt = `
+사용자 선호사항: "${userPreference}"
 
-      다음 ${sortedRestaurants.length}개의 음식점을 사용자 선호사항에 맞춰 카테고리별로 그룹화하여 분석해주세요.
+아래는 음식점 데이터입니다. 각 음식점의 네이버 설명(naverDescription)도 함께 제공합니다.
+이 설명을 반드시 참고해서, 선호사항과 얼마나 부합하는지, 분위기/특징/장점 등을 구체적으로 비교·분석해 주세요.
 
+
+**분석 기준**:
+- 각 음식점의 네이버 설명(naverDescription)에서 선호사항과 일치하는 키워드, 특징, 분위기, 장점 등을 반드시 찾아서 비교
+- 사용자 선호사항 "${userPreference}"와의 일치도
+- 방문자 리뷰 수와 블로그 리뷰 수를 통한 인기도
+      - 사용자 선호사항과 얼마나 잘 부합하는지
+      - 설명에서 드러나는 특징, 분위기, 장점, 키워드 등을 비교·분석해 주세요.
+      - 간단한 추천 이유에 식당에 정보를 녹여내서 어느정도 작성하도록해
       정확히 일치하는 식당이 없더라도, 가장 비슷하거나 일부 조건만 부합하는 식당이라도 반드시 추천 목록에 포함해서 출력해 주세요.
-      모든 그룹(최고 추천, 좋은 선택, 대안 옵션)에 최소 1개 이상 식당을 반드시 포함해 주세요.
+      모든 그룹에 최소 1개 이상 식당을 반드시 포함해 주세요.
+      - 식당 옆에 무조건 방문자 리뷰 수, 블로그 리뷰 수는 나오게 해줘
+      - 제안된 식당에 대한 설명으로 사용자의 선호사항을 간단하게 언급
 
-      ## 🍽️ "${userPreference}" 맞춤 음식점 분석
+${sortedRestaurants
+  .map(
+    (r, i) =>
+      `${i + 1}. ${r.name}
+    - 실제 방문자 리뷰: ${r.reviewCount || 0}개
+   - 실제 블로그 리뷰: ${r.blogReviewCount || 0}개
+- 네이버 설명: ${r.naverDescription || '설명 없음'}`,
+  )
+  .join('\n\n')}
 
-      ### 🥇 최고 추천 (선호사항 완벽 부합)
-${best.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+## 🍽️ "${userPreference}" 맞춤 음식점 분석
 
-      ### 🥈 좋은 선택 (선호사항 부분 부합)
-${good.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+### 🥇 최고 추천 
+${best.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [식당에 대한 네이버 정보 요약]`).join('\n\n')}
 
-      ### 🥉 대안 옵션 (선호사항과 다르지만 고려 가능)
-${alt.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [간단한 추천 이유]`).join('\n\n')}
+### 🥈 좋은 선택  
+${good.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [식당에 대한 네이버 정보 요약]`).join('\n\n')}
 
-      **분석 기준**:
-      - 사용자 선호사항 "${userPreference}"와의 일치도
-      - 네이버 설명에서 발견되는 관련 키워드
-      - 방문자 리뷰 수와 블로그 리뷰 수를 통한 인기도
-      - 접근성 (거리/소요시간)
+### 🥉 대안 옵션 
+${alt.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount || 0}개 | 블로그 리뷰 수: ${r.blogReviewCount || 0}개)\n   - [식당에 대한 네이버 정보 요약]`).join('\n\n')}
+
+ 
       
-      각 그룹별로 간결하게 정리하고, 긴 표나 상세 분석은 피해주세요.
-      
-      `;
+`;
 
       console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
       const result = await model.generateContent(prompt);
