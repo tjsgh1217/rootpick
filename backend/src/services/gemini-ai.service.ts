@@ -72,15 +72,15 @@ export class GeminiAiService {
         .slice(0, 50);
 
       if (keywords.length === 0) {
-        return this.getExpandedDefaultKeywords();
-        // return [];
+        // return this.getExpandedDefaultKeywords();
+        return [];
       }
 
       return keywords;
     } catch (error) {
       console.error('❌ AI 키워드 생성 실패:', error);
-      return this.getExpandedDefaultKeywords();
-      // return [];
+      // return this.getExpandedDefaultKeywords();
+      return [];
     }
   }
 
@@ -197,7 +197,7 @@ export class GeminiAiService {
 
       const naverDataResults = await this.naverCrawler.crawlMultipleRestaurants(
         restaurantNames,
-        3,
+        5,
       );
 
       console.log(
