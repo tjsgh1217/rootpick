@@ -164,7 +164,7 @@ export class GeminiAiService {
 
       return menus;
     } catch (error) {
-      console.error(`❌ ${restaurant.name} 메인메뉴 생성 실패:`, error);
+      // console.error(`❌ ${restaurant.name} 메인메뉴 생성 실패:`, error);
       return [];
     }
   }
@@ -191,7 +191,7 @@ export class GeminiAiService {
     restaurants: RestaurantInsight[],
   ): Promise<RestaurantInsight[]> {
     try {
-      console.log(`🔍 ${restaurants.length}개 음식점 동시 크롤링 시작...`);
+      // console.log(`🔍 ${restaurants.length}개 음식점 동시 크롤링 시작...`);
 
       const restaurantNames = restaurants.map((r) => r.name);
 
@@ -200,23 +200,18 @@ export class GeminiAiService {
         5,
       );
 
-      console.log(
-        `✅ 크롤링 완료: ${naverDataResults.length}개 음식점 데이터 수집됨`,
-      );
-
-      console.log('📊 크롤링된 데이터 상세:');
       naverDataResults.forEach((data, index) => {
         if (data) {
-          console.log(`\n🍽️ ${index + 1}. ${data.name}`);
-          console.log(`   평점: ${data.rating}점`);
-          console.log(`   리뷰 수: ${data.reviewCount}개`);
-          console.log(`   블로그 리뷰: ${data.blogReviewCount}개`);
-          console.log(`   영업시간: ${data.operatingHours || '정보 없음'}`);
-          console.log(
-            `   네이버 설명: ${data.naverDescription ? data.naverDescription.substring(0, 100) + '...' : '정보 없음'}`,
-          );
+          // console.log(`\n🍽️ ${index + 1}. ${data.name}`);
+          // console.log(`   평점: ${data.rating}점`);
+          // console.log(`   리뷰 수: ${data.reviewCount}개`);
+          // console.log(`   블로그 리뷰: ${data.blogReviewCount}개`);
+          // console.log(`   영업시간: ${data.operatingHours || '정보 없음'}`);
+          // console.log(
+          //   `   네이버 설명: ${data.naverDescription ? data.naverDescription.substring(0, 100) + '...' : '정보 없음'}`,
+          // );
         } else {
-          console.log(`\n❌ ${index + 1}. 크롤링 실패`);
+          // console.log(`\n❌ ${index + 1}. 크롤링 실패`);
         }
       });
 
@@ -249,7 +244,7 @@ export class GeminiAiService {
 
       return enrichedRestaurants;
     } catch (error) {
-      console.error('❌ 음식점 데이터 보강 실패:', error);
+      // console.error('❌ 음식점 데이터 보강 실패:', error);
       return restaurants;
     }
   }
@@ -259,11 +254,11 @@ export class GeminiAiService {
     userPreference: string,
   ): Promise<string> {
     try {
-      console.log('[AI비교] 음식점 데이터 보강 시작...');
+      // console.log('[AI비교] 음식점 데이터 보강 시작...');
 
       const enrichedRestaurants = await this.enrichRestaurantData(restaurants);
 
-      console.log('[AI비교] 데이터 보강 완료, AI 비교 분석 시작...');
+      // console.log('[AI비교] 데이터 보강 완료, AI 비교 분석 시작...');
 
       if (enrichedRestaurants.length < 2) {
         return '비교하려면 최소 2개 이상의 음식점이 필요합니다.';
@@ -328,15 +323,15 @@ ${alt.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount 
       
 `;
 
-      console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
+      // console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
       const result = await model.generateContent(prompt);
       const response = result.response;
       const text = response.text().trim();
 
-      console.log('[AI비교] 사용자 선호사항 기반 AI 비교 분석 완료');
+      // console.log('[AI비교] 사용자 선호사항 기반 AI 비교 분석 완료');
       return text;
     } catch (error) {
-      console.error('❌ 음식점 비교 AI 실패:', error);
+      // console.error('❌ 음식점 비교 AI 실패:', error);
       return 'AI 비교 결과를 생성하지 못했습니다.';
     }
   }

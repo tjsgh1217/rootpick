@@ -26,17 +26,17 @@ export class RestaurantService {
     userLng?: number,
   ) {
     try {
-      console.log('🏠 주소 기반 음식점 검색 시작');
-      console.log(`   주소: ${address}`);
-      console.log(`   사용자 좌표: ${userLat}, ${userLng}`);
+      // console.log('🏠 주소 기반 음식점 검색 시작');
+      // console.log(`   주소: ${address}`);
+      // console.log(`   사용자 좌표: ${userLat}, ${userLng}`);
 
       if (!address || address.trim() === '') {
-        console.log('❌ 주소가 비어있습니다');
+        // console.log('❌ 주소가 비어있습니다');
         return [];
       }
 
       const locationInfo = this.extractLocationFromAddress(address);
-      console.log('📍 추출된 지역 정보:', locationInfo);
+      // console.log('📍 추출된 지역 정보:', locationInfo);
 
       const aiKeywords = await this.geminiAiService.generateKeywordsByAddress(
         address,
@@ -50,7 +50,7 @@ export class RestaurantService {
         );
 
       if (searchResults.length === 0) {
-        console.log('❌ 주소 기반 검색 결과가 없습니다.');
+        // console.log('❌ 주소 기반 검색 결과가 없습니다.');
         return [];
       }
 
@@ -88,7 +88,7 @@ export class RestaurantService {
           `${this.extractCuisineType(restaurant.category)} 카테고리의 추천 맛집`,
       }));
 
-      console.log('��️ 메인메뉴 생성 시작...');
+      // console.log('��️ 메인메뉴 생성 시작...');
 
       async function asyncPool<T, R>(
         poolLimit: number,
@@ -119,11 +119,11 @@ export class RestaurantService {
           await this.geminiAiService.generateMainMenus(restaurant);
 
         if (restaurant.representativeMenus.length === 0) {
-          console.log(`   ${restaurant.name}: 메뉴 정보 없음`);
+          // console.log(`   ${restaurant.name}: 메뉴 정보 없음`);
         } else {
-          console.log(
-            `   ${restaurant.name}: ${restaurant.representativeMenus.join(', ')}`,
-          );
+          // console.log(
+          //   `   ${restaurant.name}: ${restaurant.representativeMenus.join(', ')}`,
+          // );
         }
       });
 
@@ -162,12 +162,12 @@ export class RestaurantService {
         },
       );
 
-      console.log(
-        `✅ 주소 기반 추천 완료: ${formattedResults.length}개 음식점`,
-      );
+      // console.log(
+      //   `✅ 주소 기반 추천 완료: ${formattedResults.length}개 음식점`,
+      // );
       return formattedResults;
     } catch (error) {
-      console.error('❌ 주소 기반 검색 실패:', error);
+      // console.error('❌ 주소 기반 검색 실패:', error);
       return [];
     }
   }

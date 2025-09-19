@@ -337,11 +337,11 @@ const NaverMap: React.FC<NaverMapProps> = ({
               const address = result.address;
               const fullAddress = address.jibunAddress || address.roadAddress;
 
-              console.log('🎯 Geocoder 기반 정확한 위치:', {
-                lat: latlng.lat(),
-                lng: latlng.lng(),
-                address: fullAddress,
-              });
+              // console.log('🎯 Geocoder 기반 정확한 위치:', {
+              //   lat: latlng.lat(),
+              //   lng: latlng.lng(),
+              //   address: fullAddress,
+              // });
 
               clearSelectedLocationMarker();
               clearRestaurantMarkers();
@@ -405,7 +405,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
         if (!mapElement.current || mapRef.current) return;
 
         (window as any).closeInfoWindow = () => {
-          console.log('🔴 closeInfoWindow 호출됨');
+          // console.log('🔴 closeInfoWindow 호출됨');
           closeCurrentInfoWindow();
         };
 
@@ -430,9 +430,9 @@ const NaverMap: React.FC<NaverMapProps> = ({
         window.naver.maps.Event.addListener(map, 'click', handleMapClick);
 
         setIsMapLoaded(true);
-        console.log('✅ 지도 초기화 완료 - 사용자 클릭 대기 중');
+        // console.log('✅ 지도 초기화 완료 - 사용자 클릭 대기 중');
       } catch (error) {
-        console.error('❌ 지도 초기화 실패:', error);
+        // console.error('❌ 지도 초기화 실패:', error);
       }
     };
 
@@ -462,7 +462,7 @@ const NaverMap: React.FC<NaverMapProps> = ({
     )
       return;
 
-    console.log('🍽️ 현대적 음식점 마커 생성:', restaurants.length, '개');
+    // console.log('🍽️ 현대적 음식점 마커 생성:', restaurants.length, '개');
 
     clearRestaurantMarkers();
     closeCurrentInfoWindow();

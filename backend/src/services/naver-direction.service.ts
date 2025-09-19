@@ -26,9 +26,9 @@ export class NaverDirectionService {
     endLng: number,
   ): Promise<DistanceResult> {
     try {
-      console.log(
-        `🚗 Direction API 호출: ${startLat},${startLng} → ${endLat},${endLng}`,
-      );
+      // console.log(
+      //   `🚗 Direction API 호출: ${startLat},${startLng} → ${endLat},${endLng}`,
+      // );
 
       const response = await axios.get<DirectionResponse>(
         'https://maps.apigw.ntruss.com/map-direction/v1/driving',
@@ -51,14 +51,14 @@ export class NaverDirectionService {
         const distance = route.summary.distance;
         const duration = Math.round(route.summary.duration / 1000 / 60);
 
-        console.log(`✅ Direction API 성공: ${distance}m, ${duration}분`);
+        // console.log(`✅ Direction API 성공: ${distance}m, ${duration}분`);
         return { distance, duration };
       }
 
-      console.log('❌ Direction API 응답 없음');
+      // console.log('❌ Direction API 응답 없음');
       return { distance: 0, duration: 0 };
     } catch (error) {
-      console.error('❌ Direction API 호출 실패:', error.message);
+      // console.error('❌ Direction API 호출 실패:', error.message);
       return { distance: 0, duration: 0 };
     }
   }
@@ -71,7 +71,7 @@ export class NaverDirectionService {
     const results: DistanceResult[] = [];
 
     for (const restaurant of restaurants) {
-      console.log(`🚗 Direction API 호출: ${restaurant.name}`);
+      // console.log(`🚗 Direction API 호출: ${restaurant.name}`);
       const result = await this.calculateRealDistance(
         userLat,
         userLng,

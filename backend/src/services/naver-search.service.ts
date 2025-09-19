@@ -42,7 +42,7 @@ export class NaverSearchService {
 
       for (const keyword of keywords) {
         try {
-          console.log(`🔍 "${address} ${keyword}" 검색 중...`);
+          // console.log(`🔍 "${address} ${keyword}" 검색 중...`);
 
           const response = await axios.get<NaverSearchResponse>(
             'https://openapi.naver.com/v1/search/local.json',
@@ -90,7 +90,7 @@ export class NaverSearchService {
 
           await new Promise((resolve) => setTimeout(resolve, 800));
         } catch (queryError) {
-          console.error(`❌ "${keyword}" 검색 실패:`, queryError.message);
+          // console.error(`❌ "${keyword}" 검색 실패:`, queryError.message);
           continue;
         }
       }
@@ -106,14 +106,14 @@ export class NaverSearchService {
 
       return uniqueRestaurants.slice(0, 10);
     } catch (error) {
-      console.error('❌ 주소 기반 검색 실패:', error);
+      // console.error('❌ 주소 기반 검색 실패:', error);
       throw new Error('주소 기반 음식점 검색에 실패했습니다.');
     }
   }
 
   async searchPlaces(query: string) {
     try {
-      console.log(`🔍 네이버 지역검색 API로 "${query}" 검색 중...`);
+      // console.log(`🔍 네이버 지역검색 API로 "${query}" 검색 중...`);
 
       const response = await axios.get<NaverSearchResponse>(
         'https://openapi.naver.com/v1/search/local.json',
@@ -145,7 +145,7 @@ export class NaverSearchService {
 
       return places;
     } catch (error) {
-      console.error('❌ 장소 검색 실패:', error);
+      // console.error('❌ 장소 검색 실패:', error);
       return [];
     }
   }

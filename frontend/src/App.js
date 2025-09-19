@@ -88,10 +88,10 @@ function App() {
 
   const handleLocationSelect = useCallback(
     async (location) => {
-      console.log('🎯 선택된 위치:', location);
+      // console.log('🎯 선택된 위치:', location);
 
       if (!location || !location.address) {
-        console.error('❌ 주소 정보가 없습니다:', location);
+        // console.error('❌ 주소 정보가 없습니다:', location);
         setError('주소 정보가 필요합니다.');
         return;
       }
@@ -112,7 +112,7 @@ function App() {
           lng: location.lng,
         };
 
-        console.log('🏠 주소 기반 검색 요청:', requestData);
+        // console.log('🏠 주소 기반 검색 요청:', requestData);
 
         const aiRestaurants = await searchAIRestaurants(requestData);
 
@@ -126,7 +126,7 @@ function App() {
           scrollToResults();
         }, 200);
       } catch (error) {
-        console.error('❌ 주소 기반 검색 실패:', error);
+        // console.error('❌ 주소 기반 검색 실패:', error);
         setError(`검색 실패: ${error.message}`);
         setRestaurants([]);
       } finally {
