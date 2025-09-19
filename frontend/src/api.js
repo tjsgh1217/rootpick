@@ -101,4 +101,13 @@ export const testBackendConnection = async () => {
   }
 };
 
+export const compareRestaurants = async (data) => {
+  try {
+    const response = await apiClient.post('/restaurants/compare', data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export { apiClient };
