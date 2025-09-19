@@ -1,11 +1,14 @@
+bootstrap();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const allowedOrigin = process.env.FRONTEND_ORIGIN;
+
   app.enableCors({
-    origin: ['https://rootpick.vercel.app'],
+    origin: [allowedOrigin],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
