@@ -81,26 +81,6 @@ export const searchAIRestaurants = async (data) => {
   }
 };
 
-export const testBackendConnection = async () => {
-  try {
-    // console.log('🔧 백엔드 연결 테스트 시작...');
-
-    const response = await apiClient.post('/restaurants/search-nearby', {
-      address: '테스트 주소',
-    });
-
-    // console.log('✅ 백엔드 연결 성공:', response.status);
-    return { success: true, status: response.status };
-  } catch (error) {
-    // console.error('❌ 백엔드 연결 실패:', error);
-    return {
-      success: false,
-      error: error.message,
-      status: error.response?.status,
-    };
-  }
-};
-
 export const compareRestaurants = async (data) => {
   try {
     const response = await apiClient.post('/restaurants/compare', data);

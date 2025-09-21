@@ -1,9 +1,10 @@
 import NaverMap from './components/naverMap.tsx';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { searchAIRestaurants } from './api';
-import { compareRestaurants as apiCompareRestaurants } from './api';
+import {
+  searchAIRestaurants,
+  compareRestaurants as apiCompareRestaurants,
+} from './api';
 import './App.css';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
 function App() {
