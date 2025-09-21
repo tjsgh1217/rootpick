@@ -1,6 +1,7 @@
 import NaverMap from './components/naverMap.tsx';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { searchAIRestaurants } from './api';
+import { compareRestaurants as apiCompareRestaurants } from './api';
 import './App.css';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -160,13 +161,12 @@ function App() {
       setCompareResult('');
       setCompareModalOpen(true);
 
-      const res = await axios.post('/restaurants/compare', {
+      const res = await apiCompareRestaurants({
         restaurants: restaurants,
         userPreference: userPreference.trim(),
       });
 
-      setCompareResult(res.data.result);
-    } catch (e) {
+      setCompareResult(res.result);
       setCompareError('AI 비교 결과를 가져오지 못했습니다.');
     } finally {
       setCompareLoading(false);
