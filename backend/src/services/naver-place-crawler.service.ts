@@ -17,7 +17,7 @@ export class NaverPlaceCrawlerService {
   async initBrowser() {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -25,6 +25,11 @@ export class NaverPlaceCrawlerService {
           '--disable-blink-features=AutomationControlled',
           '--disable-web-security',
           '--disable-features=VizDisplayCompositor',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
         ],
       });
     }
