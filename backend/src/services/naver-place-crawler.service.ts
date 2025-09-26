@@ -17,13 +17,15 @@ export class NaverPlaceCrawlerService {
   async initBrowser() {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: false,
+        headless: true,
+        executablePath: '/usr/bin/google-chrome-stable',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--memory-pressure-off',
           '--max_old_space_size=4096',
+          '--single-process',
         ],
       });
     }
