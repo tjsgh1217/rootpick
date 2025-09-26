@@ -18,7 +18,7 @@ export class NaverPlaceCrawlerService {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
         headless: true,
-        // executablePath: '/usr/bin/google-chrome-stable',
+        protocolTimeout: 180000,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -37,8 +37,8 @@ export class NaverPlaceCrawlerService {
     try {
       await this.initBrowser();
       page = await this.browser!.newPage();
-      page.setDefaultNavigationTimeout(90000);
-      page.setDefaultTimeout(90000);
+      page.setDefaultNavigationTimeout(180000);
+      page.setDefaultTimeout(180000);
       await page.setUserAgent(
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
