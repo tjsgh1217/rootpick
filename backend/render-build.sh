@@ -2,7 +2,6 @@
 # exit on error
 set -o errexit
 
-cd backend
 npm install
 npm run build
 
