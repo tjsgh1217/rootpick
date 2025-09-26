@@ -25,7 +25,6 @@ export class NaverPlaceCrawlerService {
           '--disable-dev-shm-usage',
           '--memory-pressure-off',
           '--max_old_space_size=4096',
-          '--single-process',
         ],
       });
     }
