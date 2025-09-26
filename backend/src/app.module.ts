@@ -4,7 +4,7 @@ import { RestaurantsController } from './restaurants/restaurants.controller';
 import { RestaurantService } from './services/restaurant.service';
 import { NaverSearchService } from './services/naver-search.service';
 import { NaverDirectionService } from './services/naver-direction.service';
-import { GeminiAiService } from './services/gemini-ai.service';
+import { OpenAiService } from './services/open-ai.service';
 import { NaverPlaceCrawlerService } from './services/naver-place-crawler.service';
 
 @Module({
@@ -18,9 +18,9 @@ import { NaverPlaceCrawlerService } from './services/naver-place-crawler.service
     RestaurantService,
     NaverSearchService,
     NaverDirectionService,
-    GeminiAiService,
+    OpenAiService,
     NaverPlaceCrawlerService,
   ],
-  exports: [GeminiAiService, NaverPlaceCrawlerService],
+  exports: [OpenAiService, NaverPlaceCrawlerService],
 })
 export class AppModule {}

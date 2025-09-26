@@ -167,8 +167,12 @@ function App() {
         userPreference: userPreference.trim(),
       });
 
-      setCompareResult(res.result);
+      const text = res?.result || '';
+      setCompareResult(text);
+      setCompareError(text ? '' : 'AI 비교 결과를 가져오지 못했습니다.');
+    } catch (err) {
       setCompareError('AI 비교 결과를 가져오지 못했습니다.');
+      setCompareResult('');
     } finally {
       setCompareLoading(false);
     }
@@ -228,7 +232,7 @@ function App() {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white/90 text-sm font-medium animate-fade-in-up ml-4 mb-4">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                Naver API + Gemini AI 기반
+                Naver API + OpenAI 기반
               </div>
 
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
@@ -309,7 +313,7 @@ function App() {
               </div>
               <div className="flex items-center gap-3 text-white/80">
                 <div className="w-2 h-2 bg-lime-200 rounded-full border border-white shadow"></div>
-                <span>Google Gemini AI로 음식점 비교 인사이트 제공</span>
+                <span>OpenAI로 음식점 비교 인사이트 제공</span>
               </div>
             </div>
           </div>

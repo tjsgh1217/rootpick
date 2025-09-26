@@ -22,14 +22,8 @@ export class NaverPlaceCrawlerService {
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-blink-features=AutomationControlled',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor',
-          // '--disable-gpu',
-          // '--disable-extensions',
-          // '--disable-background-timer-throttling',
-          // '--disable-backgrounding-occluded-windows',
-          // '--disable-renderer-backgrounding',
+          '--memory-pressure-off',
+          '--max_old_space_size=4096',
         ],
       });
     }
@@ -42,6 +36,8 @@ export class NaverPlaceCrawlerService {
     try {
       await this.initBrowser();
       page = await this.browser!.newPage();
+      page.setDefaultNavigationTimeout(90000);
+      page.setDefaultTimeout(90000);
       await page.setUserAgent(
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       );
@@ -51,7 +47,7 @@ export class NaverPlaceCrawlerService {
       const mapSearchUrl = `https://map.naver.com/v5/search/${encodeURIComponent(restaurantName)}`;
       await page.goto(mapSearchUrl, {
         waitUntil: 'networkidle2',
-        timeout: 30000,
+        timeout: 90000,
       });
       await new Promise((resolve) => setTimeout(resolve, 10000));
 
@@ -322,7 +318,7 @@ export class NaverPlaceCrawlerService {
 
   async crawlMultipleRestaurants(
     restaurantNames: string[],
-    concurrency: number = 5,
+    concurrency: number = 2,
   ): Promise<NaverPlaceData[]> {
     await this.initBrowser();
 

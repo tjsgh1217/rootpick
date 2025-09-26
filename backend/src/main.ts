@@ -13,6 +13,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  const server = app.getHttpServer();
+  if (typeof server.setTimeout === 'function') {
+    server.setTimeout(180000);
+  }
+
   await app.listen(8080);
 }
 bootstrap();

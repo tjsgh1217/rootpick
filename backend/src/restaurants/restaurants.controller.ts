@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { RestaurantService } from '../services/restaurant.service';
-import { GeminiAiService } from '../services/gemini-ai.service';
+import { OpenAiService } from '../services/open-ai.service';
 
 interface LocationSearchDto {
   address: string;
@@ -17,7 +17,7 @@ interface CompareRestaurantsDto {
 export class RestaurantsController {
   constructor(
     private readonly restaurantService: RestaurantService,
-    private readonly geminiAiService: GeminiAiService,
+    private readonly geminiAiService: OpenAiService,
   ) {}
 
   @Post('search-nearby')

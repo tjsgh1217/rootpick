@@ -4,7 +4,7 @@ import {
   RestaurantSearchResult,
 } from './naver-search.service';
 import { NaverDirectionService } from './naver-direction.service';
-import { GeminiAiService } from './gemini-ai.service';
+import { OpenAiService } from './open-ai.service';
 
 interface RestaurantData extends RestaurantSearchResult {
   distance: number;
@@ -17,7 +17,7 @@ export class RestaurantService {
   constructor(
     private naverSearchService: NaverSearchService,
     private naverDirectionService: NaverDirectionService,
-    private geminiAiService: GeminiAiService,
+    private geminiAiService: OpenAiService,
   ) {}
 
   async getRestaurantsByAddress(

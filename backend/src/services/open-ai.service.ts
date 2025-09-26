@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
 import {
   NaverPlaceCrawlerService,
   NaverPlaceData,
@@ -27,11 +28,15 @@ export interface RestaurantInsight {
 }
 
 @Injectable()
-export class GeminiAiService {
-  private genAI: GoogleGenerativeAI;
+export class OpenAiService {
+  private openai: OpenAI;
 
-  constructor(private readonly naverCrawler: NaverPlaceCrawlerService) {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  constructor(
+    private readonly naverCrawler: NaverPlaceCrawlerService,
+    private readonly configService: ConfigService,
+  ) {
+    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    this.openai = new OpenAI({ apiKey: apiKey ?? '' });
   }
 
   async generateKeywordsByAddress(
@@ -39,10 +44,6 @@ export class GeminiAiService {
     locationInfo: { city: string; district: string; dong: string },
   ): Promise<string[]> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-      });
-
       const prompt = `
       주소: ${address}
       지역: ${locationInfo.city} ${locationInfo.district} ${locationInfo.dong}
@@ -59,9 +60,18 @@ export class GeminiAiService {
       형식: - 키워드 (한 줄에 하나씩)
       `;
 
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      });
+
+      const text = completion.choices[0]?.message?.content || '';
 
       const keywords = text
         .split('\n')
@@ -72,15 +82,13 @@ export class GeminiAiService {
         .slice(0, 50);
 
       if (keywords.length === 0) {
-        // return this.getExpandedDefaultKeywords();
-        return [];
+        return this.getExpandedDefaultKeywords();
       }
 
       return keywords;
     } catch (error) {
       console.error('❌ AI 키워드 생성 실패:', error);
-      // return this.getExpandedDefaultKeywords();
-      return [];
+      return this.getExpandedDefaultKeywords();
     }
   }
 
@@ -131,10 +139,6 @@ export class GeminiAiService {
 
   async generateMainMenus(restaurant: RestaurantInsight): Promise<string[]> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-      });
-
       const prompt = `
     음식점 정보:
     - 상호명: ${restaurant.name}
@@ -151,9 +155,18 @@ export class GeminiAiService {
     일반적인 카테고리명(한식, 양식 등)이 아닌 구체적인 메뉴명으로만 답변해주세요.
     `;
 
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      });
+
+      const text = completion.choices[0]?.message?.content || '';
 
       const menus = text
         .split('\n')
@@ -164,7 +177,7 @@ export class GeminiAiService {
 
       return menus;
     } catch (error) {
-      // console.error(`❌ ${restaurant.name} 메인메뉴 생성 실패:`, error);
+      console.error(`❌ ${restaurant.name} 메인메뉴 생성 실패:`, error);
       return [];
     }
   }
@@ -200,7 +213,7 @@ export class GeminiAiService {
         5,
       );
 
-      naverDataResults.forEach((data, index) => {
+      naverDataResults.forEach((data) => {
         if (data) {
           // console.log(`\n🍽️ ${index + 1}. ${data.name}`);
           // console.log(`   평점: ${data.rating}점`);
@@ -244,7 +257,7 @@ export class GeminiAiService {
 
       return enrichedRestaurants;
     } catch (error) {
-      // console.error('❌ 음식점 데이터 보강 실패:', error);
+      console.error('❌ 음식점 데이터 보강 실패:', error);
       return restaurants;
     }
   }
@@ -269,10 +282,6 @@ export class GeminiAiService {
         if (!a.distance) return 1;
         if (!b.distance) return -1;
         return a.distance - b.distance;
-      });
-
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
       });
 
       const best = sortedRestaurants.slice(0, 2);
@@ -324,14 +333,23 @@ ${alt.map((r, i) => `${i + 1}. ${r.name} (방문자 리뷰 수: ${r.reviewCount 
 `;
 
       // console.log('[AI비교] 사용자 선호사항 기반 프롬프트 생성 완료');
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text().trim();
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      });
+
+      const text = completion.choices[0]?.message?.content?.trim() || '';
 
       // console.log('[AI비교] 사용자 선호사항 기반 AI 비교 분석 완료');
       return text;
     } catch (error) {
-      // console.error('❌ 음식점 비교 AI 실패:', error);
+      console.error('❌ 음식점 비교 AI 실패:', error);
       return 'AI 비교 결과를 생성하지 못했습니다.';
     }
   }
