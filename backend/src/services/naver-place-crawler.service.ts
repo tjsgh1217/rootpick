@@ -85,9 +85,7 @@ export class NaverPlaceCrawlerService {
             return false;
           });
           await new Promise((resolve) => setTimeout(resolve, 5000));
-        } catch {
-          void 0;
-        }
+        } catch {}
       }
 
       const updatedFrames = page.frames();
@@ -160,9 +158,7 @@ export class NaverPlaceCrawlerService {
           if (moreInfoClicked) {
             await new Promise((resolve) => setTimeout(resolve, 5000));
           }
-        } catch {
-          void 0;
-        }
+        } catch (error) {}
 
         const detailData = await entryFrame.evaluate(() => {
           const data: {
@@ -331,29 +327,11 @@ export class NaverPlaceCrawlerService {
         return result;
       }
       return null;
-    } catch {
+    } catch (error) {
       return null;
     } finally {
       if (page) {
-        try {
-          if (!page.isClosed()) {
-            await page.close({ runBeforeUnload: true });
-          }
-        } catch (unknownError) {
-          const message =
-            typeof unknownError === 'object' &&
-            unknownError &&
-            'message' in unknownError
-              ? String((unknownError as { message?: unknown }).message)
-              : String(unknownError);
-          if (
-            message.includes('No target with given id') ||
-            message.includes('Target closed') ||
-            message.includes('Target.detached')
-          ) {
-          } else {
-          }
-        }
+        await page.close();
       }
     }
   }
