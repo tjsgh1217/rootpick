@@ -1,11 +1,11 @@
-import NaverMap from './components/naverMap.tsx';
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import NaverMap from "./components/naverMap.tsx";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   searchAIRestaurants,
   compareRestaurants as apiCompareRestaurants,
-} from './api';
-import './App.css';
-import ReactMarkdown from 'react-markdown';
+} from "./api";
+import "./App.css";
+import ReactMarkdown from "react-markdown";
 
 function App() {
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -15,11 +15,11 @@ function App() {
   const [error, setError] = useState(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
-  const [compareResult, setCompareResult] = useState('');
+  const [compareResult, setCompareResult] = useState("");
   const [compareLoading, setCompareLoading] = useState(false);
-  const [compareError, setCompareError] = useState('');
+  const [compareError, setCompareError] = useState("");
   const [mapVisible, setMapVisible] = useState(false);
-  const [userPreference, setUserPreference] = useState('');
+  const [userPreference, setUserPreference] = useState("");
   const [showPreferenceInput, setShowPreferenceInput] = useState(false);
 
   const heroRef = useRef(null);
@@ -37,26 +37,26 @@ function App() {
     };
 
     const throttledScroll = throttle(handleScroll, 16);
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    return () => window.removeEventListener('scroll', throttledScroll);
+    window.addEventListener("scroll", throttledScroll, { passive: true });
+    return () => window.removeEventListener("scroll", throttledScroll);
   }, []);
 
   useEffect(() => {
     const observerOptions = {
       threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px',
+      rootMargin: "0px 0px -50px 0px",
     };
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
+          entry.target.classList.add("revealed");
           observer.unobserve(entry.target);
         }
       });
     }, observerOptions);
 
-    const revealElements = document.querySelectorAll('[data-scroll-reveal]');
+    const revealElements = document.querySelectorAll("[data-scroll-reveal]");
     revealElements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
@@ -81,9 +81,9 @@ function App() {
   const scrollToResults = useCallback(() => {
     if (resultsRef.current) {
       resultsRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest',
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
       });
     }
   }, []);
@@ -94,7 +94,7 @@ function App() {
 
       if (!location || !location.address) {
         // console.error('❌ 주소 정보가 없습니다:', location);
-        setError('주소 정보가 필요합니다.');
+        setError("주소 정보가 필요합니다.");
         return;
       }
 
@@ -119,7 +119,7 @@ function App() {
         const aiRestaurants = await searchAIRestaurants(requestData);
 
         if (!Array.isArray(aiRestaurants)) {
-          throw new Error('API 응답이 배열 형태가 아닙니다.');
+          throw new Error("API 응답이 배열 형태가 아닙니다.");
         }
 
         setRestaurants(aiRestaurants);
@@ -141,25 +141,25 @@ function App() {
   const scrollToSection = useCallback((ref) => {
     if (ref.current) {
       ref.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
+        behavior: "smooth",
+        block: "start",
       });
       setTimeout(() => {
-        window.scrollBy({ top: -30, left: 0, behavior: 'smooth' });
+        window.scrollBy({ top: -30, left: 0, behavior: "smooth" });
       }, 400);
     }
   }, []);
 
   const handleCompare = async () => {
     if (!userPreference.trim()) {
-      setCompareError('선호사항을 입력해주세요.');
+      setCompareError("선호사항을 입력해주세요.");
       return;
     }
 
     try {
       setCompareLoading(true);
-      setCompareError('');
-      setCompareResult('');
+      setCompareError("");
+      setCompareResult("");
       setCompareModalOpen(true);
 
       const res = await apiCompareRestaurants({
@@ -167,12 +167,12 @@ function App() {
         userPreference: userPreference.trim(),
       });
 
-      const text = res?.result || '';
+      const text = res?.result || "";
       setCompareResult(text);
-      setCompareError(text ? '' : 'AI 비교 결과를 가져오지 못했습니다.');
+      setCompareError(text ? "" : "AI 비교 결과를 가져오지 못했습니다.");
     } catch (err) {
-      setCompareError('AI 비교 결과를 가져오지 못했습니다.');
-      setCompareResult('');
+      setCompareError("AI 비교 결과를 가져오지 못했습니다.");
+      setCompareResult("");
     } finally {
       setCompareLoading(false);
     }
@@ -198,20 +198,20 @@ function App() {
           <div className="absolute inset-0 bg-gradient-to-br from-black/10 via-transparent to-white/5"></div>
 
           <div className="absolute inset-0 pointer-events-none">
-            {['🍜', '🍕', '🍗', '🍣', '☕', '🥘', '🍰', '🍺'].map(
+            {["🍜", "🍕", "🍗", "🍣", "☕", "🥘", "🍰", "🍺"].map(
               (emoji, i) => (
                 <span
                   key={emoji}
                   className={`
                   absolute text-3xl md:text-4xl opacity-20 animate-[float_20s_linear_infinite]
-                  ${i === 0 && 'top-16 left-16'}
-                  ${i === 1 && 'top-1/3 right-20'}
-                  ${i === 2 && 'bottom-1/4 left-1/4'}
-                  ${i === 3 && 'top-2/3 right-1/3'}
-                  ${i === 4 && 'bottom-1/3 right-16'}
-                  ${i === 5 && 'top-1/2 left-8'}
-                  ${i === 6 && 'bottom-1/2 right-8'}
-                  ${i === 7 && 'top-1/4 left-1/3'}
+                  ${i === 0 && "top-16 left-16"}
+                  ${i === 1 && "top-1/3 right-20"}
+                  ${i === 2 && "bottom-1/4 left-1/4"}
+                  ${i === 3 && "top-2/3 right-1/3"}
+                  ${i === 4 && "bottom-1/3 right-16"}
+                  ${i === 5 && "top-1/2 left-8"}
+                  ${i === 6 && "bottom-1/2 right-8"}
+                  ${i === 7 && "top-1/4 left-1/3"}
                 `}
                   style={{ animationDelay: `${i * -2.5}s` }}
                   aria-hidden="true"
@@ -238,18 +238,18 @@ function App() {
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight animate-fade-in-up">
                 <span className="block">루트픽</span>
                 <img
-                  src={process.env.PUBLIC_URL + '/rootpick-favicon.png'}
+                  src={process.env.PUBLIC_URL + "/rootpick-favicon.png"}
                   alt="RootPick Logo"
                   className="mx-auto mt-16 mb-16 ml-24 w-20 h-20 rounded-full shadow-lg"
-                  style={{ background: 'white' }}
+                  style={{ background: "white" }}
                 />
               </h1>
 
               <p
                 className="text-xl md:text-2xl font-medium text-white/90 leading-relaxed animate-fade-in-up"
-                style={{ animationDelay: '0.3s' }}
+                style={{ animationDelay: "0.3s" }}
               >
-                정확한{' '}
+                정확한{" "}
                 <span className="text-yellow-300 font-semibold">
                   좌표 기반 거리 계산
                 </span>
@@ -267,7 +267,7 @@ function App() {
           <div className="flex-1 max-w-md lg:max-w-lg">
             <div
               className="grid grid-cols-2 gap-6 animate-fade-in-up"
-              style={{ animationDelay: '0.6s' }}
+              style={{ animationDelay: "0.6s" }}
             >
               <div className="stat-card">
                 <div className="stat-number">실시간</div>
@@ -292,14 +292,14 @@ function App() {
 
             <div
               className="mt-24 space-y-3 animate-fade-in-up"
-              style={{ animationDelay: '0.9s' }}
+              style={{ animationDelay: "0.9s" }}
             >
               <div className="flex items-center gap-3 text-white/80">
                 <div className="w-2 h-2 bg-lime-600 rounded-full border border-white shadow"></div>
                 <span>Naver Dynamic Map API로 직관적인 지도 제공</span>
               </div>
               <div className="flex items-center gap-3 text-white/80">
-                <div className="w-2 h-2 bg-lime-500 rounded-full border border-white shadow"></div>{' '}
+                <div className="w-2 h-2 bg-lime-500 rounded-full border border-white shadow"></div>{" "}
                 <span>Naver Reverse Geocoding API로 좌표를 주소로 변환 </span>
               </div>
               <div className="flex items-center gap-3 text-white/80">
@@ -335,24 +335,24 @@ function App() {
           <div className="features-grid">
             {[
               {
-                icon: '⚡',
-                title: '실시간 분석',
+                icon: "⚡",
+                title: "실시간 분석",
                 description:
-                  'AI가 사용자의 취향에 맞춰 맛, 분위기, 리뷰 등을 종합적으로 분석합니다',
-                delay: '0ms',
+                  "AI가 사용자의 취향에 맞춰 맛, 분위기, 리뷰 등을 종합적으로 분석합니다",
+                delay: "0ms",
               },
               {
-                icon: '🎯',
-                title: '정확한 위치',
+                icon: "🎯",
+                title: "정확한 위치",
                 description:
-                  '위치 좌표를 기반으로 정확한 거리와 방향을 제공합니다',
-                delay: '200ms',
+                  "위치 좌표를 기반으로 정확한 거리와 방향을 제공합니다",
+                delay: "200ms",
               },
               {
-                icon: '🌟',
-                title: '큐레이션',
-                description: '음식점에 대한 다양한 정보를 제공합니다',
-                delay: '400ms',
+                icon: "🌟",
+                title: "큐레이션",
+                description: "음식점에 대한 다양한 정보를 제공합니다",
+                delay: "400ms",
               },
             ].map((feature) => (
               <div
@@ -388,11 +388,11 @@ function App() {
           <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div
             className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/15 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: '2s' }}
+            style={{ animationDelay: "2s" }}
           ></div>
           <div
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: '4s' }}
+            style={{ animationDelay: "4s" }}
           ></div>
 
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:100px_100px]"></div>
@@ -403,9 +403,9 @@ function App() {
             <div className="map-header text-center mb-12">
               <div
                 className={`inline-flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-full px-6 py-3 text-gray-800 text-base font-semibold mb-14 shadow-lg border border-gray-200/50 ${
-                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                  mapVisible ? "animate-fade-in-up" : "opacity-0"
                 }`}
-                style={mapVisible ? { animationDelay: '0.2s' } : {}}
+                style={mapVisible ? { animationDelay: "0.2s" } : {}}
               >
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 AI 맛집 추천 시스템
@@ -413,42 +413,42 @@ function App() {
 
               <h2
                 className={`map-title mb-4 text-4xl md:text-5xl font-extrabold tracking-tight text-gray-800 drop-shadow-sm ${
-                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                  mapVisible ? "animate-fade-in-up" : "opacity-0"
                 }`}
-                style={mapVisible ? { animationDelay: '0.4s' } : {}}
+                style={mapVisible ? { animationDelay: "0.4s" } : {}}
               >
                 지도에서 위치를 선택하세요
               </h2>
 
               <p
                 className={`map-description mb-8 text-lg md:text-xl font-medium text-gray-700 ${
-                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                  mapVisible ? "animate-fade-in-up" : "opacity-0"
                 }`}
-                style={mapVisible ? { animationDelay: '0.6s' } : {}}
+                style={mapVisible ? { animationDelay: "0.6s" } : {}}
               >
-                원하는 위치를 클릭하면 근처의 맛집을 찾아{' '}
+                원하는 위치를 클릭하면 근처의 맛집을 찾아{" "}
                 <span className="text-orange-500 font-bold">AI </span>가
                 비교해드립니다
               </p>
 
               <div
                 className={`flex flex-wrap justify-center gap-4 mt-6 ${
-                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                  mapVisible ? "animate-fade-in-up" : "opacity-0"
                 }`}
-                style={mapVisible ? { animationDelay: '0.8s' } : {}}
+                style={mapVisible ? { animationDelay: "0.8s" } : {}}
               >
                 {[
                   {
-                    color: 'from-green-500 to-emerald-600',
-                    text: '실시간 거리 계산',
+                    color: "from-green-500 to-emerald-600",
+                    text: "실시간 거리 계산",
                   },
                   {
-                    color: 'from-blue-500 to-indigo-600',
-                    text: 'AI 기반 추천',
+                    color: "from-blue-500 to-indigo-600",
+                    text: "AI 기반 추천",
                   },
                   {
-                    color: 'from-purple-500 to-pink-500',
-                    text: '정확한 좌표 정보',
+                    color: "from-purple-500 to-pink-500",
+                    text: "정확한 좌표 정보",
                   },
                 ].map((item, idx) => (
                   <div
@@ -472,9 +472,9 @@ function App() {
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-200/40 via-purple-200/40 to-pink-200/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-sm"></div>
               <div
                 className={`relative z-10 ${
-                  mapVisible ? 'animate-fade-in-up' : 'opacity-0'
+                  mapVisible ? "animate-fade-in-up" : "opacity-0"
                 }`}
-                style={mapVisible ? { animationDelay: '1.2s' } : {}}
+                style={mapVisible ? { animationDelay: "1.2s" } : {}}
               >
                 <NaverMap
                   onLocationSelect={handleLocationSelect}
@@ -513,8 +513,8 @@ function App() {
                   disabled={!userPreference.trim()}
                   className={`px-6 py-3 rounded-xl font-semibold text-base shadow-sm border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 ${
                     userPreference.trim()
-                      ? 'bg-gradient-to-r from-green-200 to-emerald-300 text-green-900 border-green-200 hover:from-green-300 hover:to-emerald-400 hover:shadow-md focus:ring-green-200/50'
-                      : 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed'
+                      ? "bg-gradient-to-r from-green-200 to-emerald-300 text-green-900 border-green-200 hover:from-green-300 hover:to-emerald-400 hover:shadow-md focus:ring-green-200/50"
+                      : "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
                   }`}
                   style={{ minWidth: 120 }}
                 >
@@ -548,7 +548,7 @@ function App() {
                   maxLength={100}
                 />
                 <button
-                  onClick={() => setUserPreference('')}
+                  onClick={() => setUserPreference("")}
                   className="px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors duration-200"
                 >
                   초기화
@@ -615,13 +615,13 @@ function App() {
         </div>
       </section>
 
-      <footer className="app-footer" role="contentinfo">
+      {/* <footer className="app-footer" role="contentinfo">
         <div className="container mx-auto px-6 text-center">
           <div className="footer-content">
             <p>tjsgh1217@gmail.com</p>
           </div>
         </div>
-      </footer>
+      </footer> */}
 
       {compareModalOpen && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -671,32 +671,32 @@ function App() {
 
 const RestaurantCard = React.memo(({ restaurant, index }) => {
   const getCuisineStyle = (cuisine) => {
-    if (cuisine?.includes('한식')) {
-      return 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg';
+    if (cuisine?.includes("한식")) {
+      return "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg";
     }
-    if (cuisine?.includes('중식')) {
-      return 'bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg';
+    if (cuisine?.includes("중식")) {
+      return "bg-gradient-to-r from-red-500 to-red-700 text-white shadow-lg";
     }
-    if (cuisine?.includes('일식')) {
-      return 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg';
+    if (cuisine?.includes("일식")) {
+      return "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg";
     }
-    if (cuisine?.includes('피자')) {
-      return 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg';
+    if (cuisine?.includes("피자")) {
+      return "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg";
     }
-    if (cuisine?.includes('카페')) {
-      return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg';
+    if (cuisine?.includes("카페")) {
+      return "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg";
     }
-    if (cuisine?.includes('치킨')) {
-      return 'bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg';
+    if (cuisine?.includes("치킨")) {
+      return "bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg";
     }
-    if (cuisine?.includes('베이커리')) {
-      return 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg';
+    if (cuisine?.includes("베이커리")) {
+      return "bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg";
     }
-    return 'bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg';
+    return "bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg";
   };
 
   const handleLinkClick = (url) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleCallClick = (phone) => {
@@ -707,7 +707,7 @@ const RestaurantCard = React.memo(({ restaurant, index }) => {
     const url = `https://map.naver.com/v5/search/${encodeURIComponent(
       name
     )}/place/${lat},${lng}`;
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   };
 
   return (
@@ -781,13 +781,13 @@ const RestaurantCard = React.memo(({ restaurant, index }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-xs text-blue-600">
-                {restaurant.link.includes('instagram')
-                  ? '📷 Instagram'
-                  : restaurant.link.includes('facebook')
-                  ? '👥 Facebook'
-                  : restaurant.link.includes('blog')
-                  ? '📝 Blog'
-                  : '🔗 Website'}
+                {restaurant.link.includes("instagram")
+                  ? "📷 Instagram"
+                  : restaurant.link.includes("facebook")
+                  ? "👥 Facebook"
+                  : restaurant.link.includes("blog")
+                  ? "📝 Blog"
+                  : "🔗 Website"}
               </span>
             </div>
             <button
